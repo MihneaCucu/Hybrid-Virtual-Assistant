@@ -1,0 +1,127 @@
+{
+  "project": {
+    "name": "Hybrid Virtual Assistant - QA KB",
+    "domain": "single_city_concierge",
+    "city": "Bucharest",
+    "language": "en",
+    "notes": "Primary QA knowledge base for the information branch. Keep scope bounded and source-grounded."
+  },
+  "wikipedia_targets": [
+    {
+      "title": "Bucharest",
+      "slug": "bucharest_city",
+      "topic": "city_overview"
+    },
+    {
+      "title": "Palace of the Parliament",
+      "slug": "palace_of_the_parliament",
+      "topic": "landmark"
+    },
+    {
+      "title": "Romanian Athenaeum",
+      "slug": "romanian_athenaeum",
+      "topic": "landmark"
+    },
+    {
+      "title": "National Museum of Art of Romania",
+      "slug": "national_museum_of_art_of_romania",
+      "topic": "museum"
+    },
+    {
+      "title": "National Museum of Romanian History",
+      "slug": "national_museum_of_romanian_history",
+      "topic": "museum"
+    },
+    {
+      "title": "Grigore Antipa National Museum of Natural History",
+      "slug": "antipa_museum",
+      "topic": "museum"
+    },
+    {
+      "title": "Dimitrie Gusti National Village Museum",
+      "slug": "village_museum",
+      "topic": "museum"
+    },
+    {
+      "title": "Cismigiu Gardens",
+      "slug": "cismigiu_gardens",
+      "topic": "park"
+    },
+    {
+      "title": "King Michael I Park",
+      "slug": "king_michael_park",
+      "topic": "park"
+    },
+    {
+      "title": "Bucharest Metro",
+      "slug": "bucharest_metro",
+      "topic": "transport"
+    },
+    {
+      "title": "Bucharest North railway station",
+      "slug": "bucharest_north_railway_station",
+      "topic": "transport"
+    },
+    {
+      "title": "University Square, Bucharest",
+      "slug": "university_square_bucharest",
+      "topic": "district"
+    },
+    {
+      "title": "Arcul de Triumf",
+      "slug": "arcul_de_triumf",
+      "topic": "landmark"
+    },
+    {
+      "title": "Stavropoleos Monastery",
+      "slug": "stavropoleos_monastery",
+      "topic": "landmark"
+    }
+  ],
+  "structured_sources": [
+    {
+      "id": "tpbi_gtfs",
+      "kind": "gtfs",
+      "provider": "TPBI",
+      "city": "Bucharest-Ilfov",
+      "entry_url": "https://gtfs.tpbi.ro/regional/",
+      "endpoint_or_download": "See Download GTFS ALL/STB links on the entry page",
+      "license_notes": "Check TPBI open-data terms before redistribution",
+      "priority": "high",
+      "enabled": true
+    },
+    {
+      "id": "romania_museums",
+      "kind": "csv_xml",
+      "provider": "data.gov.ro / Institutul National al Patrimoniului",
+      "city": "Romania (filter Bucharest)",
+      "entry_url": "https://data.gov.ro/dataset/ghidul-muzeelor-din-romania",
+      "endpoint_or_download": "CSV and XML resources listed on the dataset page",
+      "license_notes": "OGL-ROU-1.0 attribution requirements apply",
+      "priority": "high",
+      "enabled": true
+    },
+    {
+      "id": "osm_overpass_poi",
+      "kind": "api_json",
+      "provider": "OpenStreetMap Overpass",
+      "city": "Bucharest",
+      "entry_url": "https://wiki.openstreetmap.org/wiki/Overpass_API",
+      "endpoint_or_download": "https://overpass-api.de/api/interpreter",
+      "license_notes": "ODbL attribution/share-alike requirements apply",
+      "priority": "medium",
+      "enabled": true
+    },
+    {
+      "id": "wikidata_city_entities",
+      "kind": "sparql_json",
+      "provider": "Wikidata Query Service",
+      "city": "Bucharest",
+      "entry_url": "https://www.wikidata.org/wiki/Wikidata:SPARQL_query_service",
+      "endpoint_or_download": "https://query.wikidata.org/sparql",
+      "license_notes": "Structured data in Wikidata is CC0",
+      "priority": "medium",
+      "enabled": true
+    }
+  ]
+}

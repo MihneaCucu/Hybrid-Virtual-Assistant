@@ -1,0 +1,12 @@
+{"id":"buc_q001","question":"Where is the Palace of the Parliament located?","answerable":true,"gold_answer":"","gold_doc":"","notes":"Fill after collection/indexing"}
+{"id":"buc_q002","question":"What is the Romanian Athenaeum?","answerable":true,"gold_answer":"","gold_doc":"","notes":"Fill after collection/indexing"}
+{"id":"buc_q003","question":"Which museum focuses on natural history in Bucharest?","answerable":true,"gold_answer":"","gold_doc":"","notes":"Fill after collection/indexing"}
+{"id":"buc_q004","question":"What transport system is operated by Metrorex in Bucharest?","answerable":true,"gold_answer":"","gold_doc":"","notes":"Fill after collection/indexing"}
+{"id":"buc_q005","question":"Where is University Square in Bucharest?","answerable":true,"gold_answer":"","gold_doc":"","notes":"Fill after collection/indexing"}
+{"id":"buc_q006","question":"Which landmark is also known as Arcul de Triumf?","answerable":true,"gold_answer":"","gold_doc":"","notes":"Fill after collection/indexing"}
+{"id":"buc_q007","question":"What kind of place is Stavropoleos Monastery?","answerable":true,"gold_answer":"","gold_doc":"","notes":"Fill after collection/indexing"}
+{"id":"buc_q008","question":"Tell me about Cismigiu Gardens.","answerable":true,"gold_answer":"","gold_doc":"","notes":"Fill after collection/indexing"}
+{"id":"buc_q009","question":"What is the capital of Japan?","answerable":false,"gold_answer":"","gold_doc":"","notes":"Out of scope negative"}
+{"id":"buc_q010","question":"Who won the FIFA World Cup in 2022?","answerable":false,"gold_answer":"","gold_doc":"","notes":"Out of scope negative"}
+{"id":"buc_q011","question":"Set a reminder for tomorrow and tell me where the Romanian Athenaeum is.","answerable":false,"gold_answer":"","gold_doc":"","notes":"Mixed command + QA, should handoff"}
+{"id":"buc_q012","question":"Book a table and tell me metro station details near Old Town.","answerable":false,"gold_answer":"","gold_doc":"","notes":"Mixed command + QA, should handoff"}
