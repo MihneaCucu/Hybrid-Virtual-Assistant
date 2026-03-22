@@ -5,7 +5,7 @@ import json
 import math
 import os
 
-INPUTS_DEFAULT = "kb/structured/museums.jsonl,kb/structured/osm_places.jsonl"
+INPUTS_DEFAULT = "kb/structured/museums.jsonl,kb/structured/osm_places.jsonl,kb/structured/restaurants.jsonl"
 TRANSIT_DEFAULT = "kb/structured/transit.jsonl"
 OUTPUT_DEFAULT = "kb/structured/museum_metro_links.jsonl"
 
@@ -125,6 +125,26 @@ def normalize_place(row: dict) -> dict | None:
             "aliases": aliases,
             "address": row.get("address", ""),
             "city": "Bucharest",
+            "lat": lat,
+            "lon": lon,
+        }
+
+    if record_type == "restaurant":
+        name = row.get("name", "")
+        name_en = row.get("name_en", "")
+        aliases = unique_strings([name, name_en] + list(row.get("name_aliases", []) or []))
+        lat = to_float(row.get("lat"))
+        lon = to_float(row.get("lon"))
+        if lat is None or lon is None:
+            return None
+        return {
+            "record_id": record_id,
+            "record_type": record_type,
+            "name": name or name_en,
+            "name_en": name_en,
+            "aliases": aliases,
+            "address": row.get("address", ""),
+            "city": row.get("city", "Bucharest"),
             "lat": lat,
             "lon": lon,
         }

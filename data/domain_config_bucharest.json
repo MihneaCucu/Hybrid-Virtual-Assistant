@@ -42,12 +42,34 @@
     "metro_target_markers": [
       "museum",
       "muzeu",
+      "restaurant",
+      "food",
       "park",
       "square",
       "monastery",
       "palace",
       "athenaeum",
       "landmark"
+    ],
+    "transport_nearby_markers": [
+      "near",
+      "nearby",
+      "around",
+      "vicinity",
+      "close to",
+      "in vicinity"
+    ],
+    "transport_stop_markers": [
+      "transport",
+      "station",
+      "stations",
+      "stop",
+      "stops",
+      "stb",
+      "metro",
+      "bus",
+      "tram",
+      "trolleybus"
     ],
     "address_markers": [
       "address",
@@ -123,7 +145,12 @@
       "$",
       "usd",
       "€"
-    ]
+    ],
+    "nearby_transport_radius_m": 800,
+    "nearby_transport_max_stops": 6,
+    "nearby_transport_max_metro_stops": 2,
+    "nearby_transport_max_surface_stops": 4,
+    "nearby_transport_max_lines_per_stop": 5
   },
   "links": {
     "pmb_url": "https://www.pmb.ro",

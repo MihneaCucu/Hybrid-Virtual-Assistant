@@ -35,6 +35,11 @@ def main() -> None:
         action="store_true",
         help="Skip OSM place/address fetch even when network fetch is enabled.",
     )
+    parser.add_argument(
+        "--skip-restaurants",
+        action="store_true",
+        help="Skip OSM restaurant fetch even when network fetch is enabled.",
+    )
     args = parser.parse_args()
 
     py = sys.executable
@@ -63,6 +68,8 @@ def main() -> None:
         )
         if not args.skip_osm:
             steps.append([py, "scripts/fetch_osm_places.py"])
+        if not args.skip_restaurants:
+            steps.append([py, "scripts/fetch_restaurants_overpass.py"])
 
     steps.extend(
         [

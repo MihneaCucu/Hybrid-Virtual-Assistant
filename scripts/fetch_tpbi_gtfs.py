@@ -122,11 +122,71 @@ def derive_subway_stop_ids(zf: zipfile.ZipFile, routes: list[dict]) -> set[str]:
     return subway_stop_ids
 
 
+def derive_stop_route_metadata(zf: zipfile.ZipFile, routes: list[dict]) -> dict[str, dict[str, list[str]]]:
+    route_by_id: dict[str, dict] = {}
+    for route in routes:
+        route_id = str(route.get("route_id", "")).strip()
+        if not route_id:
+            continue
+        route_type = str(route.get("route_type", "")).strip()
+        route_by_id[route_id] = {
+            "route_id": route_id,
+            "route_short_name": str(route.get("route_short_name", "")).strip(),
+            "route_type_label": ROUTE_TYPE_LABELS.get(route_type, "unknown"),
+        }
+
+    if not route_by_id:
+        return {}
+
+    trip_to_route: dict[str, str] = {}
+    for row in iter_gtfs_rows(zf, "trips.txt") or []:
+        trip_id = str(row.get("trip_id", "")).strip()
+        route_id = str(row.get("route_id", "")).strip()
+        if not trip_id or route_id not in route_by_id:
+            continue
+        trip_to_route[trip_id] = route_id
+
+    stop_to_route_sets: dict[str, dict[str, set[str]]] = {}
+    for row in iter_gtfs_rows(zf, "stop_times.txt") or []:
+        trip_id = str(row.get("trip_id", "")).strip()
+        stop_id = str(row.get("stop_id", "")).strip()
+        if not trip_id or not stop_id:
+            continue
+        route_id = trip_to_route.get(trip_id)
+        if not route_id:
+            continue
+        route = route_by_id.get(route_id)
+        if route is None:
+            continue
+
+        entry = stop_to_route_sets.setdefault(
+            stop_id,
+            {"route_ids": set(), "route_short_names": set(), "route_type_labels": set()},
+        )
+        entry["route_ids"].add(route["route_id"])
+        short_name = route["route_short_name"]
+        if short_name:
+            entry["route_short_names"].add(short_name)
+        type_label = route["route_type_label"]
+        if type_label:
+            entry["route_type_labels"].add(type_label)
+
+    stop_route_map: dict[str, dict[str, list[str]]] = {}
+    for stop_id, entry in stop_to_route_sets.items():
+        stop_route_map[stop_id] = {
+            "route_ids": sorted(entry["route_ids"], key=lambda v: (len(v), v)),
+            "route_short_names": sorted(entry["route_short_names"], key=lambda v: (len(v), v)),
+            "route_type_labels": sorted(entry["route_type_labels"]),
+        }
+    return stop_route_map
+
+
 def normalize_gtfs(
     agencies: list[dict],
     routes: list[dict],
     stops: list[dict],
     subway_stop_ids: set[str],
+    stop_route_map: dict[str, dict[str, list[str]]],
     max_routes: int,
     max_stops: int,
 ) -> list[dict]:
@@ -184,6 +244,10 @@ def normalize_gtfs(
     stop_limit = len(sorted_stops) if max_stops <= 0 else min(max_stops, len(sorted_stops))
     for stop in sorted_stops[:stop_limit]:
         stop_id = stop.get("stop_id", "")
+        stop_key = str(stop_id).strip()
+        route_info = stop_route_map.get(stop_key, {})
+        route_short_names = route_info.get("route_short_names", [])
+        route_type_labels = route_info.get("route_type_labels", [])
         records.append(
             {
                 "record_id": f"stop_{stop_id}",
@@ -196,7 +260,10 @@ def normalize_gtfs(
                 "stop_lon": stop.get("stop_lon", ""),
                 "zone_id": stop.get("zone_id", ""),
                 "parent_station": stop.get("parent_station", ""),
-                "is_subway_stop": str(stop_id).strip() in subway_stop_ids,
+                "is_subway_stop": stop_key in subway_stop_ids,
+                "route_short_names": route_short_names,
+                "route_type_labels": route_type_labels,
+                "route_count": len(route_short_names),
             }
         )
 
@@ -254,12 +321,14 @@ def main() -> None:
             routes = read_gtfs_table(zf, "routes.txt")
             stops = read_gtfs_table(zf, "stops.txt")
             subway_stop_ids = derive_subway_stop_ids(zf, routes)
+            stop_route_map = derive_stop_route_metadata(zf, routes)
 
         records = normalize_gtfs(
             agencies=agencies,
             routes=routes,
             stops=stops,
             subway_stop_ids=subway_stop_ids,
+            stop_route_map=stop_route_map,
             max_routes=args.max_routes,
             max_stops=args.max_stops,
         )

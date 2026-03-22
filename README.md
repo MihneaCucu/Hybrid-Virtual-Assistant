@@ -28,6 +28,7 @@ Hybrid-Virtual-Assistant/
 │   ├── fetch_museums_ro.py ← Structured museums ingestion (CSV -> JSONL)
 │   ├── link_places_to_metro.py ← Place-to-nearest-metro linker (JSONL -> JSONL)
 │   ├── fetch_osm_places.py ← OSM place/address ingestion (Nominatim -> JSONL)
+│   ├── fetch_restaurants_overpass.py ← OSM restaurants ingestion (Overpass -> JSONL)
 │   ├── build_structured_text_docs.py ← Structured JSONL -> QA text docs
 │   ├── build_index.py     ← Chunking + BM25 index builder
 │   ├── rebuild_qa_kb.py   ← One-command KB rebuild pipeline
@@ -92,8 +93,10 @@ python scripts/fetch_museums_ro.py --entry-url https://data.gov.ro/dataset/ghidu
 python scripts/link_places_to_metro.py
 # Place addresses (OSM/Nominatim):
 python scripts/fetch_osm_places.py
+# Restaurants (OSM/Overpass):
+python scripts/fetch_restaurants_overpass.py
 # Convert structured JSONL records into clean QA text docs
-# (default includes system_summary, agency, route, museum, museum_metro_link, place_metro_link, osm_place;
+# (default includes system_summary, agency, route, museum, restaurant, museum_metro_link, place_metro_link, osm_place;
 # excludes stop-level docs):
 python scripts/build_structured_text_docs.py --clear-existing
 # To include stop-level docs too:
@@ -101,6 +104,8 @@ python scripts/build_structured_text_docs.py --clear-existing
 
 # Offline rebuild from already-fetched structured files:
 # python scripts/rebuild_qa_kb.py --no-network-fetch
+# Optional skips:
+# python scripts/rebuild_qa_kb.py --skip-restaurants
 
 # 6. (Re)build BM25 index after adding structured docs
 python scripts/build_index.py
@@ -111,7 +116,15 @@ from qa.qa_module import load_qa_system, answer_question
 load_qa_system()
 print(answer_question('Where is the Romanian Athenaeum located?'))
 "
+
+# Optional: force offline mode after first successful model download
+# export HF_HUB_OFFLINE=1
+# export TRANSFORMERS_OFFLINE=1
 ```
+
+The QA module also supports rule-based vicinity queries such as:
+`Show metro as well as STB stations near Romanian Athenaeum`
+and returns nearby metro/surface stops with available line numbers.
 
 ---
 

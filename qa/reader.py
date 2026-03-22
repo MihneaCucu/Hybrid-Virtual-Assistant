@@ -11,14 +11,32 @@ _tokenizer = None
 _model = None
 
 
+def _is_offline_mode() -> bool:
+    return os.environ.get("HF_HUB_OFFLINE") == "1" or os.environ.get("TRANSFORMERS_OFFLINE") == "1"
+
+
+def _load_model_and_tokenizer():
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, local_files_only=True)
+        model = AutoModelForQuestionAnswering.from_pretrained(MODEL_NAME, local_files_only=True)
+        return tokenizer, model
+    except Exception as local_err:
+        if _is_offline_mode():
+            raise RuntimeError(
+                f"Reader model '{MODEL_NAME}' is not available in local cache while offline mode is enabled."
+            ) from local_err
+        tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+        model = AutoModelForQuestionAnswering.from_pretrained(MODEL_NAME)
+        return tokenizer, model
+
+
 def load_reader() -> None:
     global _tokenizer, _model
     if _model is not None:
         return
 
     os.environ["TORCH_DYNAMO_DISABLE"] = "1"
-    _tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-    _model = AutoModelForQuestionAnswering.from_pretrained(MODEL_NAME)
+    _tokenizer, _model = _load_model_and_tokenizer()
     _model.eval()
 
 
