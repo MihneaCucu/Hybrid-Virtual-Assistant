@@ -110,6 +110,40 @@
       "park fee",
       "parking fee"
     ],
+    "travel_markers": [
+      "visit",
+      "travel",
+      "trip",
+      "vacation",
+      "holiday",
+      "stay",
+      "days",
+      "itinerary",
+      "budget",
+      "season"
+    ],
+    "season_query_markers": [
+      "best season",
+      "best time",
+      "when to visit",
+      "season to visit",
+      "when should i visit"
+    ],
+    "budget_query_markers": [
+      "budget",
+      "how much",
+      "cost",
+      "daily budget",
+      "per day",
+      "expenses"
+    ],
+    "days_query_markers": [
+      "how many days",
+      "days to stay",
+      "how long to stay",
+      "trip length",
+      "itinerary"
+    ],
     "symbolic_query_markers": [
       "symbolize",
       "symbolise",

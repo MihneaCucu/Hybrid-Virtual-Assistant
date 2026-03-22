@@ -48,6 +48,7 @@ _transit_stops: list[dict] = []
 _restaurant_rows: list[dict] = []
 _coffee_shop_rows: list[dict] = []
 _known_cuisine_markers: list[str] = []
+_travel_guidance: dict = {}
 _domain_config: dict = {}
 _LEET_REPLACEMENTS = str.maketrans({"0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t"})
 _MIN_ALIAS_CHARS = 3
@@ -70,6 +71,10 @@ DEFAULT_DOMAIN_CONFIG = {
         "price_query_markers": ["how much", "price", "cost", "fare", "ticket"],
         "transit_markers": ["metro", "subway", "bus", "tram", "transport", "ticket", "fare", "stb", "metrorex"],
         "parking_markers": ["parking", "parcare", "park fee", "parking fee"],
+        "travel_markers": ["visit", "travel", "trip", "vacation", "holiday", "stay", "days", "itinerary", "budget", "season"],
+        "season_query_markers": ["best season", "best time", "when to visit", "season to visit", "when should i visit"],
+        "budget_query_markers": ["budget", "how much", "cost", "daily budget", "per day", "expenses"],
+        "days_query_markers": ["how many days", "days to stay", "how long to stay", "trip length", "itinerary"],
         "symbolic_query_markers": ["symbolize", "symbolise", "commemorate", "historical event"],
         "exact_location_query_markers": ["exact address", "street", "number", "where exactly", "exact location"],
         "symbolic_answer_markers": ["world war", "victory", "coronation", "king", "historical"],
@@ -215,6 +220,19 @@ def _cfg_int(section: str, key: str, default: int) -> int:
         return int(value)
     except (TypeError, ValueError):
         return default
+
+
+def _load_travel_guidance(path: str) -> dict:
+    try:
+        with open(path, encoding="utf-8") as f:
+            loaded = json.load(f)
+    except FileNotFoundError:
+        return {}
+    except json.JSONDecodeError:
+        return {}
+    if not isinstance(loaded, dict):
+        return {}
+    return loaded
 
 
 def _contains_any(lowered_text: str, markers: list[str]) -> bool:
@@ -658,6 +676,9 @@ def _title_case_words(text: str) -> str:
 
 
 def _answer_place_listing_query(query: str) -> dict | None:
+    if _is_price_query(query):
+        return None
+
     normalized_query = _normalize_for_match(query)
     location_phrase = _extract_location_phrase(normalized_query)
     if not location_phrase:
@@ -731,6 +752,73 @@ def _answer_place_listing_query(query: str) -> dict | None:
         "source_doc": source_doc,
         "sources": [{"doc_id": source_doc, "chunk_id": None}] if source_doc else [],
         "confidence": 0.97,
+        "fallback": False,
+    }
+
+
+def _looks_like_travel_query(normalized_query: str) -> bool:
+    travel_markers = _cfg_list("qa", "travel_markers")
+    return any(re.search(rf"\b{re.escape(marker)}\b", normalized_query) is not None for marker in travel_markers)
+
+
+def _query_topic(normalized_query: str) -> str | None:
+    season_markers = _cfg_list("qa", "season_query_markers")
+    budget_markers = _cfg_list("qa", "budget_query_markers")
+    days_markers = _cfg_list("qa", "days_query_markers")
+
+    for marker in season_markers:
+        if marker in normalized_query:
+            return "season"
+    for marker in budget_markers:
+        if marker in normalized_query:
+            return "budget"
+    for marker in days_markers:
+        if marker in normalized_query:
+            return "days"
+
+    if "season" in normalized_query or "when to visit" in normalized_query:
+        return "season"
+    if "budget" in normalized_query or ("cost" in normalized_query and "visit" in normalized_query):
+        return "budget"
+    if "how many days" in normalized_query or "how long" in normalized_query:
+        return "days"
+    return None
+
+
+def _answer_travel_guidance_query(query: str) -> dict | None:
+    if not _travel_guidance:
+        return None
+
+    normalized_query = _normalize_for_match(query)
+    if not _looks_like_travel_query(normalized_query):
+        return None
+
+    topic = _query_topic(normalized_query)
+    if topic is None:
+        return None
+
+    city = str(_travel_guidance.get("city", "Bucharest")).strip() or "Bucharest"
+    source_doc = str(_travel_guidance.get("source_doc", "curated_bucharest_travel_guidance")).strip()
+
+    answer = None
+    if topic == "season":
+        answer = str(_travel_guidance.get("best_season", "")).strip()
+    elif topic == "budget":
+        answer = str(_travel_guidance.get("budget", "")).strip()
+    elif topic == "days":
+        answer = str(_travel_guidance.get("recommended_days", "")).strip()
+
+    if not answer:
+        return None
+
+    final_answer = f"For {city}: {answer}"
+    return {
+        "status": "answered",
+        "reason_code": "RULE_BASED_TRAVEL_GUIDANCE",
+        "answer": final_answer,
+        "source_doc": source_doc,
+        "sources": [{"doc_id": source_doc, "chunk_id": None}],
+        "confidence": 0.96,
         "fallback": False,
     }
 
@@ -996,6 +1084,7 @@ def load_qa_system(
     restaurants_path: str = "kb/structured/restaurants.jsonl",
     coffee_shops_path: str = "kb/structured/coffee_shops.jsonl",
     transit_path: str = "kb/structured/transit.jsonl",
+    travel_guidance_path: str = "data/bucharest_travel_guidance.json",
     domain_config_path: str = "data/domain_config_bucharest.json",
 ) -> None:
     """
@@ -1006,7 +1095,7 @@ def load_qa_system(
         kb_path:    Path to the chunked knowledge base (JSONL).
         index_path: Path to the serialized BM25 index (pickle).
     """
-    global _system_loaded, _chunks, _bm25, _museum_metro_aliases, _museum_address_aliases, _place_address_aliases, _transit_agencies, _transit_stops, _restaurant_rows, _coffee_shop_rows, _known_cuisine_markers, _domain_config
+    global _system_loaded, _chunks, _bm25, _museum_metro_aliases, _museum_address_aliases, _place_address_aliases, _transit_agencies, _transit_stops, _restaurant_rows, _coffee_shop_rows, _known_cuisine_markers, _travel_guidance, _domain_config
     if _system_loaded:
         return
 
@@ -1023,6 +1112,7 @@ def load_qa_system(
     _known_cuisine_markers = _build_cuisine_markers(_restaurant_rows + _coffee_shop_rows)
     _transit_agencies = _load_transit_agencies(transit_path)
     _transit_stops = _load_transit_stops(transit_path)
+    _travel_guidance = _load_travel_guidance(travel_guidance_path)
     load_reader()
     _system_loaded = True
 
@@ -1053,6 +1143,10 @@ def answer_question(query: str) -> dict:
 
     if _looks_like_question(query) and _looks_like_command(query):
         return make_handoff_response(reason_code="MIXED_COMMAND_QUERY")
+
+    travel_guidance_answer = _answer_travel_guidance_query(query)
+    if travel_guidance_answer is not None:
+        return travel_guidance_answer
 
     nearby_transport_answer = _answer_nearby_transport_query(query)
     if nearby_transport_answer is not None:

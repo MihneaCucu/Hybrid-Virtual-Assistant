@@ -44,6 +44,7 @@ Hybrid-Virtual-Assistant/
 ├── data/
 │   ├── kb_sources_bucharest.json ← QA source registry (single-city scope)
 │   ├── domain_config_bucharest.json ← QA behavior config (keywords + fallback links)
+│   ├── bucharest_travel_guidance.json ← Curated travel guidance facts (season/budget/days)
 │   ├── test_set.json             ← Local positive QA eval set
 │   ├── negative_test_set.jsonl   ← Local unanswerable/mixed eval set
 │   └── qa_annotation_template_bucharest.jsonl ← Template for creating final eval set
@@ -129,6 +130,11 @@ print(answer_question('Where is the Romanian Athenaeum located?'))
 The QA module also supports rule-based vicinity queries such as:
 `Show metro as well as STB stations near Romanian Athenaeum`
 and returns nearby metro/surface stops with available line numbers.
+
+It also supports bounded Bucharest travel-guidance questions such as:
+`What season is best to visit Bucharest?`
+`What is the budget for visiting Bucharest?`
+`How many days should I stay in Bucharest?`
 
 ---
 
