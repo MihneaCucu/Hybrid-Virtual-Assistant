@@ -192,6 +192,16 @@ python scripts/demo_qa.py
 python scripts/demo_qa.py --limit 8
 ```
 
+## Interactive Terminal Chat
+
+```bash
+# Interactive QA chat in terminal:
+python scripts/chat_cli.py
+
+# Optional: include debug metadata per answer
+python scripts/chat_cli.py --show-meta
+```
+
 ---
 
 ## Dependencies

@@ -45,10 +45,14 @@ _museum_address_aliases: list[tuple[str, list[dict]]] = []
 _place_address_aliases: list[tuple[str, list[dict]]] = []
 _transit_agencies: list[dict] = []
 _transit_stops: list[dict] = []
+_restaurant_rows: list[dict] = []
+_coffee_shop_rows: list[dict] = []
+_known_cuisine_markers: list[str] = []
 _domain_config: dict = {}
 _LEET_REPLACEMENTS = str.maketrans({"0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t"})
 _MIN_ALIAS_CHARS = 3
 _MAX_DISAMBIG_OPTIONS = 4
+_MAX_LISTING_RESULTS = 5
 
 DEFAULT_DOMAIN_CONFIG = {
     "nlu": {
@@ -502,6 +506,38 @@ def _load_transit_stops(path: str) -> list[dict]:
     return stops
 
 
+def _load_place_rows(path: str, allowed_types: set[str]) -> list[dict]:
+    try:
+        with open(path, encoding="utf-8") as f:
+            rows = [json.loads(line) for line in f if line.strip()]
+    except FileNotFoundError:
+        return []
+
+    selected: list[dict] = []
+    for row in rows:
+        if row.get("record_type") not in allowed_types:
+            continue
+        name = str(row.get("name", "")).strip()
+        address = str(row.get("address", "")).strip()
+        if not name or not address:
+            continue
+        selected.append(row)
+    return selected
+
+
+def _build_cuisine_markers(rows: list[dict]) -> list[str]:
+    markers: set[str] = set()
+    for row in rows:
+        raw = str(row.get("cuisine", "")).strip()
+        if not raw:
+            continue
+        for part in raw.split(","):
+            token = _normalize_for_match(part)
+            if len(token) >= 3:
+                markers.add(token)
+    return sorted(markers, key=len, reverse=True)
+
+
 def _normalize_url(url: str) -> str:
     parsed = urlparse(url)
     if not parsed.scheme:
@@ -583,6 +619,120 @@ def _is_museum_address_query(text: str) -> bool:
 def _is_place_address_query(text: str) -> bool:
     lowered = text.lower()
     return _contains_any(lowered, _cfg_list("qa", "address_markers"))
+
+
+def _extract_location_phrase(normalized_query: str) -> str:
+    match = re.search(r"\b(?:on|in|at|near)\s+([a-z0-9 ]+)$", normalized_query)
+    if not match:
+        return ""
+    phrase = " ".join(match.group(1).split())
+    if len(phrase) < 3:
+        return ""
+    location_markers = {"strada", "street", "calea", "bulevardul", "boulevard", "bd", "sos", "soseaua", "piata", "square"}
+    tokens = phrase.split()
+    if not any(token in location_markers for token in tokens) and len(tokens) < 2:
+        return ""
+    return phrase
+
+
+def _extract_cuisine_filter(normalized_query: str) -> str:
+    for marker in _known_cuisine_markers:
+        if re.search(rf"\b{re.escape(marker)}\b", normalized_query):
+            return marker
+    return ""
+
+
+def _detect_listing_scope(normalized_query: str) -> str | None:
+    has_restaurant = re.search(r"\brestaurant(s)?\b", normalized_query) is not None
+    has_coffee = re.search(r"\b(coffee|cafe|cafes|coffee shop|coffee shops)\b", normalized_query) is not None
+    has_food = re.search(r"\b(food|cuisine)\b", normalized_query) is not None
+    if has_coffee:
+        return "coffee_shop"
+    if has_restaurant or has_food:
+        return "restaurant"
+    return None
+
+
+def _title_case_words(text: str) -> str:
+    return " ".join(word.capitalize() for word in text.split())
+
+
+def _answer_place_listing_query(query: str) -> dict | None:
+    normalized_query = _normalize_for_match(query)
+    location_phrase = _extract_location_phrase(normalized_query)
+    if not location_phrase:
+        return None
+
+    scope = _detect_listing_scope(normalized_query)
+    if scope is None:
+        return None
+
+    if scope == "coffee_shop":
+        pool = _coffee_shop_rows
+        type_label_singular = "coffee shop"
+        type_label_plural = "coffee shops"
+    else:
+        pool = _restaurant_rows
+        type_label_singular = "restaurant"
+        type_label_plural = "restaurants"
+
+    cuisine_filter = _extract_cuisine_filter(normalized_query)
+    matched: list[dict] = []
+    for row in pool:
+        address_norm = _normalize_for_match(row.get("address", ""))
+        if location_phrase not in address_norm:
+            continue
+        if cuisine_filter:
+            cuisine_norm = _normalize_for_match(row.get("cuisine", ""))
+            if not re.search(rf"\b{re.escape(cuisine_filter)}\b", cuisine_norm):
+                continue
+        matched.append(row)
+
+    if not matched:
+        return make_fallback_response(
+            reason_code="NO_PLACE_MATCH_ON_LOCATION",
+            answer=f"I could not find {type_label_plural} on {_title_case_words(location_phrase)} in the current knowledge base.",
+        )
+
+    deduped: list[dict] = []
+    seen: set[tuple[str, str]] = set()
+    for row in sorted(matched, key=lambda item: (str(item.get("name", "")).lower(), str(item.get("address", "")).lower())):
+        key = (_normalize_for_match(row.get("name", "")), _normalize_for_match(row.get("address", "")))
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(row)
+
+    shown = deduped[:_MAX_LISTING_RESULTS]
+    names = [str(row.get("name", "")).strip() for row in shown if str(row.get("name", "")).strip()]
+    location_text = _title_case_words(location_phrase)
+    if len(deduped) == 1 and names:
+        answer = f"One {type_label_singular} on {location_text} is {names[0]}."
+    else:
+        if cuisine_filter:
+            cuisine_text = _title_case_words(cuisine_filter)
+            prefix = f"I found {len(deduped)} {cuisine_text} {type_label_plural} on {location_text}"
+        else:
+            prefix = f"I found {len(deduped)} {type_label_plural} on {location_text}"
+        if names:
+            shown_text = ", ".join(names)
+            if len(deduped) > len(shown):
+                answer = f"{prefix}. Examples: {shown_text}."
+            else:
+                answer = f"{prefix}: {shown_text}."
+        else:
+            answer = f"{prefix}."
+
+    source_doc = f"structured_{shown[0].get('record_id', '')}" if shown else None
+    return {
+        "status": "answered",
+        "reason_code": "RULE_BASED_PLACE_LIST_MATCH",
+        "answer": answer,
+        "source_doc": source_doc,
+        "sources": [{"doc_id": source_doc, "chunk_id": None}] if source_doc else [],
+        "confidence": 0.97,
+        "fallback": False,
+    }
 
 
 def _is_nearby_transport_query(text: str) -> bool:
@@ -856,7 +1006,7 @@ def load_qa_system(
         kb_path:    Path to the chunked knowledge base (JSONL).
         index_path: Path to the serialized BM25 index (pickle).
     """
-    global _system_loaded, _chunks, _bm25, _museum_metro_aliases, _museum_address_aliases, _place_address_aliases, _transit_agencies, _transit_stops, _domain_config
+    global _system_loaded, _chunks, _bm25, _museum_metro_aliases, _museum_address_aliases, _place_address_aliases, _transit_agencies, _transit_stops, _restaurant_rows, _coffee_shop_rows, _known_cuisine_markers, _domain_config
     if _system_loaded:
         return
 
@@ -868,6 +1018,9 @@ def load_qa_system(
     _place_address_aliases.extend(_load_place_address_aliases(restaurants_path))
     _place_address_aliases.extend(_load_place_address_aliases(coffee_shops_path))
     _place_address_aliases.sort(key=lambda item: len(item[0]), reverse=True)
+    _restaurant_rows = _load_place_rows(restaurants_path, {"restaurant"})
+    _coffee_shop_rows = _load_place_rows(coffee_shops_path, {"coffee_shop"})
+    _known_cuisine_markers = _build_cuisine_markers(_restaurant_rows + _coffee_shop_rows)
     _transit_agencies = _load_transit_agencies(transit_path)
     _transit_stops = _load_transit_stops(transit_path)
     load_reader()
@@ -904,6 +1057,10 @@ def answer_question(query: str) -> dict:
     nearby_transport_answer = _answer_nearby_transport_query(query)
     if nearby_transport_answer is not None:
         return nearby_transport_answer
+
+    listing_answer = _answer_place_listing_query(query)
+    if listing_answer is not None:
+        return listing_answer
 
     linked_answer = _answer_museum_metro_query(query)
     if linked_answer is not None:
