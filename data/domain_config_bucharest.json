@@ -1,0 +1,141 @@
+{
+  "nlu": {
+    "question_markers": [
+      "what",
+      "when",
+      "where",
+      "who",
+      "why",
+      "how",
+      "which",
+      "tell me",
+      "is",
+      "are",
+      "can"
+    ],
+    "command_markers": [
+      "set",
+      "book",
+      "schedule",
+      "create",
+      "add",
+      "cancel",
+      "remind"
+    ]
+  },
+  "qa": {
+    "metro_station_markers": [
+      "metro station",
+      "subway station",
+      "station",
+      "metro line",
+      "subway line"
+    ],
+    "metro_relation_markers": [
+      "at",
+      "near",
+      "nearest",
+      "closest",
+      "for",
+      "to"
+    ],
+    "metro_target_markers": [
+      "museum",
+      "muzeu",
+      "park",
+      "square",
+      "monastery",
+      "palace",
+      "athenaeum",
+      "landmark"
+    ],
+    "address_markers": [
+      "address",
+      "street",
+      "number",
+      "located at",
+      "where exactly",
+      "where is",
+      "located"
+    ],
+    "museum_markers": [
+      "museum",
+      "muzeu"
+    ],
+    "price_query_markers": [
+      "how much",
+      "price",
+      "cost",
+      "fare",
+      "ticket"
+    ],
+    "transit_markers": [
+      "metro",
+      "subway",
+      "bus",
+      "tram",
+      "transport",
+      "ticket",
+      "fare",
+      "stb",
+      "metrorex"
+    ],
+    "parking_markers": [
+      "parking",
+      "parcare",
+      "park fee",
+      "parking fee"
+    ],
+    "symbolic_query_markers": [
+      "symbolize",
+      "symbolise",
+      "commemorate",
+      "historical event"
+    ],
+    "exact_location_query_markers": [
+      "exact address",
+      "street",
+      "number",
+      "where exactly",
+      "exact location"
+    ],
+    "symbolic_answer_markers": [
+      "world war",
+      "victory",
+      "coronation",
+      "king",
+      "historical"
+    ],
+    "location_answer_markers": [
+      "strada",
+      "street",
+      "soseaua",
+      "boulevard",
+      "sector",
+      "piata",
+      "nr"
+    ],
+    "price_answer_markers": [
+      "lei",
+      "ron",
+      "euro",
+      "eur",
+      "$",
+      "usd",
+      "€"
+    ]
+  },
+  "links": {
+    "pmb_url": "https://www.pmb.ro",
+    "transit_official_links": [
+      {
+        "name": "STB SA",
+        "url": "http://stbsa.ro"
+      },
+      {
+        "name": "METROREX SA",
+        "url": "http://www.metrorex.ro"
+      }
+    ]
+  }
+}
