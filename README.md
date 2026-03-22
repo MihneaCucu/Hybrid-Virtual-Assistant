@@ -24,16 +24,24 @@ Hybrid-Virtual-Assistant/
 │   └── fallback.py        ← Confidence scoring and fallback logic (internal)
 ├── scripts/
 │   ├── collect_data.py    ← Wikipedia collection from JSON registry
+│   ├── fetch_tpbi_gtfs.py ← Structured transit ingestion (GTFS -> JSONL)
+│   ├── fetch_museums_ro.py ← Structured museums ingestion (CSV -> JSONL)
+│   ├── link_places_to_metro.py ← Place-to-nearest-metro linker (JSONL -> JSONL)
+│   ├── fetch_osm_places.py ← OSM place/address ingestion (Nominatim -> JSONL)
+│   ├── build_structured_text_docs.py ← Structured JSONL -> QA text docs
 │   ├── build_index.py     ← Chunking + BM25 index builder
+│   ├── rebuild_qa_kb.py   ← One-command KB rebuild pipeline
 │   ├── validate_kb_sources.py ← Source registry validator
 │   └── evaluate_qa.py     ← QA evaluation metrics
 ├── kb/
 │   ├── raw/               ← Raw Wikipedia text (one .txt per document)
 │   ├── clean/             ← Cleaned documents (committed to git)
+│   ├── structured/        ← Normalized structured records (JSONL)
 │   ├── chunks.jsonl        ← Chunked documents (gitignored, regenerated)
 │   └── bm25_index.pkl     ← BM25 index (gitignored, regenerated)
 ├── data/
 │   ├── kb_sources_bucharest.json ← QA source registry (single-city scope)
+│   ├── domain_config_bucharest.json ← QA behavior config (keywords + fallback links)
 │   ├── test_set.json             ← Local positive QA eval set
 │   ├── negative_test_set.jsonl   ← Local unanswerable/mixed eval set
 │   └── qa_annotation_template_bucharest.jsonl ← Template for creating final eval set
@@ -72,7 +80,32 @@ python scripts/collect_data.py --targets data/kb_sources_bucharest.json --clear-
 # 5. Build BM25 index
 python scripts/build_index.py
 
-# 6. Verify the QA module works
+# One-command full QA KB rebuild (recommended):
+python scripts/rebuild_qa_kb.py
+
+# Optional: add structured sources before indexing
+# Transit:
+python scripts/fetch_tpbi_gtfs.py --entry-url https://gtfs.tpbi.ro/regional/ --max-routes 120 --max-stops 300
+# Museums:
+python scripts/fetch_museums_ro.py --entry-url https://data.gov.ro/dataset/ghidul-muzeelor-din-romania
+# Place -> nearest metro station links (museums + future place types with lat/lon):
+python scripts/link_places_to_metro.py
+# Place addresses (OSM/Nominatim):
+python scripts/fetch_osm_places.py
+# Convert structured JSONL records into clean QA text docs
+# (default includes system_summary, agency, route, museum, museum_metro_link, place_metro_link, osm_place;
+# excludes stop-level docs):
+python scripts/build_structured_text_docs.py --clear-existing
+# To include stop-level docs too:
+# python scripts/build_structured_text_docs.py --clear-existing --include-types system_summary,agency,route,stop,museum
+
+# Offline rebuild from already-fetched structured files:
+# python scripts/rebuild_qa_kb.py --no-network-fetch
+
+# 6. (Re)build BM25 index after adding structured docs
+python scripts/build_index.py
+
+# 7. Verify the QA module works
 python -c "
 from qa.qa_module import load_qa_system, answer_question
 load_qa_system()
@@ -112,6 +145,9 @@ else:
     speak(result["answer"])
 ```
 
+To adjust domain behavior without code edits (keywords, PMB/transit fallback links), edit:
+`data/domain_config_bucharest.json`
+
 ---
 
 ## Evaluation
@@ -128,6 +164,16 @@ python scripts/evaluate_qa.py \
 ```
 
 Results are saved to `results/`.
+
+## Demo Run
+
+```bash
+# Run presentation demo queries:
+python scripts/demo_qa.py
+
+# Optional: run only first N queries
+python scripts/demo_qa.py --limit 8
+```
 
 ---
 

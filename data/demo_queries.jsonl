@@ -1,0 +1,17 @@
+{"id":"demo_01","query":"On which street and number is the Romanian Athenaeum located?","expected_status":"answered","notes":"exact address query"}
+{"id":"demo_02","query":"When was the Palace of Parliament built?","expected_status":"answered","notes":"construction period"}
+{"id":"demo_03","query":"What transit route serves Aeroport Henri Coanda Sosiri?","expected_status":"answered","notes":"structured GTFS route"}
+{"id":"demo_05","query":"What style is Stavropoleos Monastery built in?","expected_status":"answered","notes":"religious landmark fact"}
+{"id":"demo_06","query":"What metro station is The Museum of Bucharest at?","expected_status":"answered","notes":"returns nearest metro station name"}
+{"id":"demo_07","query":"How much is a metro ticket in Bucharest?","expected_status":"fallback","notes":"ticket pricing not in current KB snapshot"}
+{"id":"demo_08","query":"What does Arcul de Triumf symbolize?","expected_status":"answered","notes":"symbolism/commemoration phrasing"}
+{"id":"demo_09","query":"What is the exact address of Antipa Museum?","expected_status":"answered","notes":"exact museum address"}
+{"id":"demo_10","query":"What metro station is Romanian Athenaeum at?","expected_status":"answered","notes":"generic place->metro link"}
+{"id":"demo_11","query":"What metro station is University Square at?","expected_status":"answered","notes":"square->metro link"}
+{"id":"demo_12","query":"What metro station is Arcul de Triumf at?","expected_status":"answered","notes":"landmark->metro link"}
+{"id":"demo_13","query":"Where is Stavropoleos Monastery?","expected_status":"answered","notes":"place address from OSM"}
+{"id":"demo_14","query":"What metro station is National Museum of Art of Romania at?","expected_status":"answered","notes":"museum->metro via generic linker"}
+{"id":"demo_15","query":"What website should I check for metro fares in Bucharest?","expected_status":"fallback","notes":"safe fallback with official links"}
+{"id":"demo_16","query":"Who is the president of France?","expected_status":"fallback","notes":"out of domain should fallback"}
+{"id":"demo_17","query":"How much does parking cost in Bucharest city center?","expected_status":"fallback","notes":"unsupported pricing query"}
+{"id":"demo_18","query":"What metro station is Antipa Museum at?","expected_status":"answered","notes":"alias-based museum->metro link"}

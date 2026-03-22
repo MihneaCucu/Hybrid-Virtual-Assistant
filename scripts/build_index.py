@@ -63,9 +63,13 @@ def chunk_document(doc_id: str, text: str) -> list[dict]:
     return chunks
 
 def main() -> None:
-    txt_files = sorted(
+    all_txt_files = sorted(
         f for f in os.listdir(CLEAN_DIR) if f.endswith(".txt")
     )
+    txt_files = [f for f in all_txt_files if not re.search(r" \d+\.txt$", f)]
+    skipped = len(all_txt_files) - len(txt_files)
+    if skipped:
+        print(f"  Skipping {skipped} duplicate-looking files matching '* <n>.txt'.")
 
     if not txt_files:
         print(f"ERROR: No .txt files found in {CLEAN_DIR}. Run collect_data.py first.")

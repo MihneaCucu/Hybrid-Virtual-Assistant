@@ -26,11 +26,11 @@ def should_fallback_reader(reader_score: float) -> bool:
     return reader_score < READER_THRESHOLD
 
 
-def make_fallback_response(reason_code: str = "LOW_CONFIDENCE") -> dict:
+def make_fallback_response(reason_code: str = "LOW_CONFIDENCE", answer: str | None = None) -> dict:
     return {
         "status":     "fallback",
         "reason_code": reason_code,
-        "answer":     None,
+        "answer":     answer,
         "source_doc": None,
         "sources":    [],
         "confidence": 0.0,
