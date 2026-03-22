@@ -1,0 +1,76 @@
+{
+  "examples": [
+    {
+      "id": "q1",
+      "question": "What is the capital city of Romania?",
+      "answer": "Bucharest",
+      "source_doc": "bucharest_city"
+    },
+    {
+      "id": "q2",
+      "question": "On which river does Bucharest stand?",
+      "answer": "River Dambovita",
+      "source_doc": "bucharest_city"
+    },
+    {
+      "id": "q3",
+      "question": "What is the Palace of the Parliament the seat of?",
+      "answer": "Parliament of Romania",
+      "source_doc": "palace_of_the_parliament"
+    },
+    {
+      "id": "q4",
+      "question": "Where is the Romanian Athenaeum located?",
+      "answer": "center of Bucharest",
+      "source_doc": "romanian_athenaeum"
+    },
+    {
+      "id": "q5",
+      "question": "Who runs the Bucharest Metro network?",
+      "answer": "Metrorex",
+      "source_doc": "bucharest_metro"
+    },
+    {
+      "id": "q6",
+      "question": "How many metro lines does Bucharest Metro have?",
+      "answer": "five lines",
+      "source_doc": "bucharest_metro"
+    },
+    {
+      "id": "q7",
+      "question": "What type of museum is the Grigore Antipa National Museum?",
+      "answer": "natural history museum",
+      "source_doc": "antipa_museum"
+    },
+    {
+      "id": "q8",
+      "question": "Where is University Square located?",
+      "answer": "Bucharest city centre",
+      "source_doc": "university_square_bucharest"
+    },
+    {
+      "id": "q9",
+      "question": "What is Arcul de Triumf?",
+      "answer": "triumphal arch",
+      "source_doc": "arcul_de_triumf"
+    },
+    {
+      "id": "q10",
+      "question": "What style is Stavropoleos church built in?",
+      "answer": "Brancovenesc style",
+      "source_doc": "stavropoleos_monastery"
+    },
+    {
+      "id": "q11",
+      "question": "What kind of museum is the Village Museum?",
+      "answer": "open-air ethnographic museum",
+      "source_doc": "village_museum"
+    },
+    {
+      "id": "q12",
+      "question": "Where is the National Museum of Art of Romania located?",
+      "answer": "Royal Palace in Revolution Square",
+      "source_doc": "national_museum_of_art_of_romania"
+    }
+  ]
+}
