@@ -58,7 +58,7 @@ DEFAULT_DOMAIN_CONFIG = {
     "qa": {
         "metro_station_markers": ["metro station", "subway station", "station", "metro line", "subway line"],
         "metro_relation_markers": ["at", "near", "nearest", "closest", "for", "to"],
-        "metro_target_markers": ["museum", "muzeu", "park", "square", "monastery", "palace", "athenaeum", "landmark"],
+        "metro_target_markers": ["museum", "muzeu", "restaurant", "food", "coffee", "cafe", "park", "square", "monastery", "palace", "athenaeum", "landmark"],
         "transport_nearby_markers": ["near", "nearby", "around", "vicinity", "close to", "in vicinity"],
         "transport_stop_markers": ["transport", "station", "stations", "stop", "stops", "stb", "metro", "bus", "tram", "trolleybus"],
         "address_markers": ["address", "street", "number", "located at", "where exactly", "where is", "located"],
@@ -411,7 +411,7 @@ def _load_place_address_aliases(path: str) -> list[tuple[str, list[dict]]]:
     alias_to_rows: dict[str, dict[str, dict]] = {}
     for row in rows:
         record_type = row.get("record_type")
-        if record_type not in {"osm_place", "restaurant"}:
+        if record_type not in {"osm_place", "restaurant", "coffee_shop"}:
             continue
         if record_type == "osm_place" and row.get("slug") == "bucharest_city":
             # Avoid broad aliases that can over-trigger on many city-level questions.
@@ -844,6 +844,7 @@ def load_qa_system(
     museums_path: str = "kb/structured/museums.jsonl",
     places_path: str = "kb/structured/osm_places.jsonl",
     restaurants_path: str = "kb/structured/restaurants.jsonl",
+    coffee_shops_path: str = "kb/structured/coffee_shops.jsonl",
     transit_path: str = "kb/structured/transit.jsonl",
     domain_config_path: str = "data/domain_config_bucharest.json",
 ) -> None:
@@ -865,6 +866,7 @@ def load_qa_system(
     _museum_address_aliases = _load_museum_address_aliases(museums_path)
     _place_address_aliases = _load_place_address_aliases(places_path)
     _place_address_aliases.extend(_load_place_address_aliases(restaurants_path))
+    _place_address_aliases.extend(_load_place_address_aliases(coffee_shops_path))
     _place_address_aliases.sort(key=lambda item: len(item[0]), reverse=True)
     _transit_agencies = _load_transit_agencies(transit_path)
     _transit_stops = _load_transit_stops(transit_path)

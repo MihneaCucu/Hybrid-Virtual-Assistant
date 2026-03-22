@@ -93,6 +93,21 @@ def text_for_record(record: dict) -> str:
             f"{name_en_text}{aliases_text}"
         )
 
+    if record_type == "coffee_shop":
+        aliases = record.get("name_aliases", []) or []
+        aliases_text = f" Also known as: {', '.join(aliases)}." if aliases else ""
+        name_en = record.get("name_en", "")
+        name_en_text = f" English name: {name_en}." if name_en else ""
+        return (
+            f"{record.get('name', 'This coffee shop')} is a coffee shop in {record.get('city', 'Bucharest')}. "
+            f"Address: {record.get('address', 'not provided')}. "
+            f"Cuisine or specialty tags: {record.get('cuisine', 'not specified')}. "
+            f"Website: {record.get('website', 'not provided')}. "
+            f"Phone: {record.get('phone', 'not provided')}. "
+            f"Coordinates: latitude {record.get('lat', '')}, longitude {record.get('lon', '')}."
+            f"{name_en_text}{aliases_text}"
+        )
+
     if record_type in {"museum_metro_link", "place_metro_link"}:
         name = record.get("place_name") or record.get("museum_name") or "This place"
         address = record.get("place_address") or record.get("museum_address") or "unknown address"
@@ -138,7 +153,7 @@ def main() -> None:
     parser.add_argument("--clear-existing", action="store_true", help=f"Delete existing {DOC_PREFIX}*.txt docs before generating.")
     parser.add_argument(
         "--include-types",
-        default="system_summary,agency,route,museum,restaurant,museum_metro_link,place_metro_link,osm_place",
+        default="system_summary,agency,route,museum,restaurant,coffee_shop,museum_metro_link,place_metro_link,osm_place",
         help="Comma-separated record types to convert (default excludes stop-level records).",
     )
     args = parser.parse_args()

@@ -29,6 +29,7 @@ Hybrid-Virtual-Assistant/
 │   ├── link_places_to_metro.py ← Place-to-nearest-metro linker (JSONL -> JSONL)
 │   ├── fetch_osm_places.py ← OSM place/address ingestion (Nominatim -> JSONL)
 │   ├── fetch_restaurants_overpass.py ← OSM restaurants ingestion (Overpass -> JSONL)
+│   ├── fetch_coffee_shops_overpass.py ← OSM coffee shops ingestion (Overpass -> JSONL)
 │   ├── build_structured_text_docs.py ← Structured JSONL -> QA text docs
 │   ├── build_index.py     ← Chunking + BM25 index builder
 │   ├── rebuild_qa_kb.py   ← One-command KB rebuild pipeline
@@ -95,8 +96,10 @@ python scripts/link_places_to_metro.py
 python scripts/fetch_osm_places.py
 # Restaurants (OSM/Overpass):
 python scripts/fetch_restaurants_overpass.py
+# Coffee shops (OSM/Overpass):
+python scripts/fetch_coffee_shops_overpass.py
 # Convert structured JSONL records into clean QA text docs
-# (default includes system_summary, agency, route, museum, restaurant, museum_metro_link, place_metro_link, osm_place;
+# (default includes system_summary, agency, route, museum, restaurant, coffee_shop, museum_metro_link, place_metro_link, osm_place;
 # excludes stop-level docs):
 python scripts/build_structured_text_docs.py --clear-existing
 # To include stop-level docs too:
@@ -106,6 +109,7 @@ python scripts/build_structured_text_docs.py --clear-existing
 # python scripts/rebuild_qa_kb.py --no-network-fetch
 # Optional skips:
 # python scripts/rebuild_qa_kb.py --skip-restaurants
+# python scripts/rebuild_qa_kb.py --skip-coffee-shops
 
 # 6. (Re)build BM25 index after adding structured docs
 python scripts/build_index.py
