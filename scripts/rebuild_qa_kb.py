@@ -45,7 +45,22 @@ def main() -> None:
         action="store_true",
         help="Skip OSM coffee-shop fetch even when network fetch is enabled.",
     )
+    parser.add_argument(
+        "--profile",
+        choices=["full", "final_demo"],
+        default="full",
+        help="Structured text profile passed to build_structured_text_docs.py.",
+    )
+    parser.add_argument(
+        "--final-demo",
+        action="store_true",
+        help="Shortcut for --profile final_demo and skipping restaurant/coffee fetches.",
+    )
     args = parser.parse_args()
+    if args.final_demo:
+        args.profile = "final_demo"
+        args.skip_restaurants = True
+        args.skip_coffee_shops = True
 
     py = sys.executable
     steps: list[list[str]] = []
@@ -81,7 +96,7 @@ def main() -> None:
     steps.extend(
         [
             [py, "scripts/link_places_to_metro.py"],
-            [py, "scripts/build_structured_text_docs.py", "--clear-existing"],
+            [py, "scripts/build_structured_text_docs.py", "--clear-existing", "--profile", args.profile],
             [py, "scripts/build_index.py"],
         ]
     )

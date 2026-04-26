@@ -1,10 +1,14 @@
-{"question": "What is the capital of Japan?"}
-{"question": "Who won the FIFA World Cup in 2022?"}
-{"question": "What is the current Bitcoin price?"}
-{"question": "How do I bake sourdough bread?"}
-{"question": "Set a reminder for tomorrow and tell me where University Square is."}
-{"question": "Book a table for 8 PM and tell me the metro opening time."}
-{"question": "Who is the CEO of OpenAI?"}
-{"question": "Explain quantum mechanics in simple words."}
-{"question": "Can you set an alarm and also explain Bucharest population?"}
-{"question": "What is the weather in Tokyo right now?"}
+{"id":"neg_001","question":"What is the capital of Japan?","expected_status":"fallback","category":"out_of_domain"}
+{"id":"neg_002","question":"Who won the FIFA World Cup in 2022?","expected_status":"fallback","category":"out_of_domain"}
+{"id":"neg_003","question":"What is the current Bitcoin price?","expected_status":"fallback","category":"live_fact"}
+{"id":"neg_004","question":"How do I bake sourdough bread?","expected_status":"fallback","category":"out_of_domain"}
+{"id":"neg_005","question":"Who is the CEO of OpenAI?","expected_status":"fallback","category":"current_fact"}
+{"id":"neg_006","question":"Explain quantum mechanics in simple words.","expected_status":"fallback","category":"out_of_domain"}
+{"id":"neg_007","question":"What is the weather in Tokyo right now?","expected_status":"fallback","category":"live_fact"}
+{"id":"neg_008","question":"How much is a metro ticket in Bucharest?","expected_status":"fallback","category":"unsupported_price"}
+{"id":"neg_009","question":"How much does parking cost in Bucharest city center?","expected_status":"fallback","category":"unsupported_price"}
+{"id":"neg_010","question":"How much is dinner at Ahmad Cuisine?","expected_status":"fallback","category":"unsupported_price"}
+{"id":"mix_001","question":"Set a reminder for tomorrow and tell me where University Square is.","expected_status":"handoff","category":"mixed_command_info"}
+{"id":"mix_002","question":"Book a table for 8 PM and tell me the metro opening time.","expected_status":"handoff","category":"mixed_command_info"}
+{"id":"mix_003","question":"Can you set an alarm and also explain Bucharest population?","expected_status":"handoff","category":"mixed_command_info"}
+{"id":"mix_004","question":"Schedule a museum visit and tell me what metro station is near Antipa Museum.","expected_status":"handoff","category":"mixed_command_info"}

@@ -37,10 +37,30 @@ def short_answer(text: str | None, max_len: int = 180) -> str:
     return compact[: max_len - 3] + "..."
 
 
+def format_sources(sources: object) -> str:
+    if not isinstance(sources, list) or not sources:
+        return "-"
+    formatted: list[str] = []
+    for source in sources[:5]:
+        if not isinstance(source, dict):
+            continue
+        doc_id = source.get("doc_id") or source.get("source_doc") or source.get("id") or "-"
+        score = source.get("score")
+        if score is None:
+            formatted.append(str(doc_id))
+        else:
+            try:
+                formatted.append(f"{doc_id} ({float(score):.3f})")
+            except (TypeError, ValueError):
+                formatted.append(f"{doc_id} ({score})")
+    return ", ".join(formatted) if formatted else "-"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run a QA demo using predefined queries.")
     parser.add_argument("--queries", default=str(DEFAULT_QUERIES), help=f"Path to demo query JSONL (default: {DEFAULT_QUERIES})")
     parser.add_argument("--limit", type=int, default=0, help="Maximum number of demo queries to run (0 = all).")
+    parser.add_argument("--show-sources", action="store_true", help="Print grounding sources returned by the QA module.")
     args = parser.parse_args()
 
     query_path = Path(args.queries)
@@ -72,6 +92,8 @@ def main() -> None:
         print(f"Expected: {expected or '-'} | Got: {got} | Match: {'yes' if ok else 'no'}")
         print(f"Reason: {result.get('reason_code')}")
         print(f"Source: {result.get('source_doc')}")
+        if args.show_sources:
+            print(f"Sources: {format_sources(result.get('sources'))}")
         print(f"Confidence: {result.get('confidence')}")
         print(f"Answer: {short_answer(result.get('answer'))}")
         print()

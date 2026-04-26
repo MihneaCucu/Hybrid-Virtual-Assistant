@@ -8,6 +8,10 @@ import re
 STRUCTURED_DEFAULT = "kb/structured"
 OUTPUT_DIR_DEFAULT = "kb/clean"
 DOC_PREFIX = "structured_"
+PROFILE_INCLUDE_TYPES = {
+    "full": "system_summary,agency,route,museum,restaurant,coffee_shop,museum_metro_link,place_metro_link,osm_place",
+    "final_demo": "system_summary,agency,route,museum,museum_metro_link,place_metro_link,osm_place",
+}
 
 
 def sanitize_slug(text: str) -> str:
@@ -23,6 +27,56 @@ def iter_jsonl(path: str):
             line = line.strip()
             if line:
                 yield json.loads(line)
+
+
+def load_allowlist(path: str) -> set[str]:
+    if not path:
+        return set()
+    with open(path, encoding="utf-8") as f:
+        payload = json.load(f)
+    if isinstance(payload, list):
+        return {str(item).strip() for item in payload if str(item).strip()}
+    if isinstance(payload, dict):
+        values = payload.get("record_ids", [])
+        if isinstance(values, list):
+            return {str(item).strip() for item in values if str(item).strip()}
+    raise ValueError(f"Unsupported allowlist format in {path}; expected a list or object with record_ids.")
+
+
+def record_matches_allowlist(record: dict, allowlist: set[str]) -> bool:
+    if not allowlist:
+        return True
+    candidates = {
+        str(record.get("record_id", "")).strip(),
+        str(record.get("place_record_id", "")).strip(),
+        str(record.get("slug", "")).strip(),
+        str(record.get("name", "")).strip(),
+        str(record.get("place_name", "")).strip(),
+        str(record.get("title", "")).strip(),
+    }
+    return any(candidate and candidate in allowlist for candidate in candidates)
+
+
+def should_include_record(
+    record: dict,
+    profile: str,
+    restaurant_allowlist: set[str],
+    coffee_shop_allowlist: set[str],
+) -> bool:
+    record_type = record.get("record_type", "")
+    if record_type == "restaurant":
+        return bool(restaurant_allowlist) and record_matches_allowlist(record, restaurant_allowlist)
+    if record_type == "coffee_shop":
+        return bool(coffee_shop_allowlist) and record_matches_allowlist(record, coffee_shop_allowlist)
+    if record_type == "place_metro_link":
+        place_type = str(record.get("place_record_type", "")).strip()
+        if place_type == "restaurant":
+            return bool(restaurant_allowlist) and record_matches_allowlist(record, restaurant_allowlist)
+        if place_type == "coffee_shop":
+            return bool(coffee_shop_allowlist) and record_matches_allowlist(record, coffee_shop_allowlist)
+        if profile == "final_demo" and place_type not in {"museum", "osm_place"}:
+            return False
+    return True
 
 
 def text_for_record(record: dict) -> str:
@@ -152,14 +206,33 @@ def main() -> None:
     parser.add_argument("--out-dir", default=OUTPUT_DIR_DEFAULT, help=f"Output directory for .txt docs (default: {OUTPUT_DIR_DEFAULT})")
     parser.add_argument("--clear-existing", action="store_true", help=f"Delete existing {DOC_PREFIX}*.txt docs before generating.")
     parser.add_argument(
+        "--profile",
+        choices=sorted(PROFILE_INCLUDE_TYPES),
+        default="full",
+        help="Predefined structured-doc profile. Use final_demo for a smaller report/demo KB.",
+    )
+    parser.add_argument(
         "--include-types",
-        default="system_summary,agency,route,museum,restaurant,coffee_shop,museum_metro_link,place_metro_link,osm_place",
-        help="Comma-separated record types to convert (default excludes stop-level records).",
+        default="",
+        help="Comma-separated record types to convert. Overrides --profile when provided.",
+    )
+    parser.add_argument(
+        "--restaurant-allowlist",
+        default="",
+        help="Optional JSON allowlist for restaurant records to include.",
+    )
+    parser.add_argument(
+        "--coffee-shop-allowlist",
+        default="",
+        help="Optional JSON allowlist for coffee-shop records to include.",
     )
     args = parser.parse_args()
 
     os.makedirs(args.out_dir, exist_ok=True)
-    include_types = {token.strip() for token in args.include_types.split(",") if token.strip()}
+    include_text = args.include_types or PROFILE_INCLUDE_TYPES[args.profile]
+    include_types = {token.strip() for token in include_text.split(",") if token.strip()}
+    restaurant_allowlist = load_allowlist(args.restaurant_allowlist)
+    coffee_shop_allowlist = load_allowlist(args.coffee_shop_allowlist)
 
     if args.clear_existing:
         for fname in os.listdir(args.out_dir):
@@ -178,9 +251,14 @@ def main() -> None:
 
     written = 0
     per_source: dict[str, int] = {}
+    skipped_by_allowlist = 0
     for path in input_files:
         for record in iter_jsonl(path):
-            if include_types and record.get("record_type", "") not in include_types:
+            record_type = record.get("record_type", "")
+            if include_types and record_type not in include_types:
+                continue
+            if not should_include_record(record, args.profile, restaurant_allowlist, coffee_shop_allowlist):
+                skipped_by_allowlist += 1
                 continue
             source = record.get("source", "unknown")
             per_source[source] = per_source.get(source, 0) + 1
@@ -191,7 +269,10 @@ def main() -> None:
             written += 1
 
     print(f"Wrote {written} structured QA docs -> {args.out_dir}")
+    print(f"Profile: {args.profile}")
     print(f"Included record types: {', '.join(sorted(include_types))}")
+    if skipped_by_allowlist:
+        print(f"Skipped by allowlist: {skipped_by_allowlist}")
     for source, count in sorted(per_source.items()):
         print(f"- {source}: {count}")
 

@@ -40,6 +40,7 @@ _system_loaded = False
 _chunks = []
 _bm25 = None
 _READER_TOP_N = 6
+_RETRIEVAL_TOP_K = 8
 _museum_metro_aliases: list[tuple[str, list[dict]]] = []
 _museum_address_aliases: list[tuple[str, list[dict]]] = []
 _place_address_aliases: list[tuple[str, list[dict]]] = []
@@ -629,6 +630,8 @@ def _is_museum_metro_query(text: str) -> bool:
 
 def _is_museum_address_query(text: str) -> bool:
     lowered = text.lower()
+    if "entrance" in lowered:
+        return False
     has_address = _contains_any(lowered, _cfg_list("qa", "address_markers"))
     has_target = _contains_any(lowered, _cfg_list("qa", "museum_markers"))
     return has_address and has_target
@@ -636,6 +639,8 @@ def _is_museum_address_query(text: str) -> bool:
 
 def _is_place_address_query(text: str) -> bool:
     lowered = text.lower()
+    if "entrance" in lowered:
+        return False
     return _contains_any(lowered, _cfg_list("qa", "address_markers"))
 
 
@@ -1070,9 +1075,215 @@ def _is_exact_location_query(text: str) -> bool:
     return _contains_any(lowered, _cfg_list("qa", "exact_location_query_markers"))
 
 
+def _is_definition_query(text: str) -> bool:
+    lowered = text.lower().strip()
+    return lowered.startswith("what is ") or lowered.startswith("what are ")
+
+
+def _is_specific_entity_alias(alias: str) -> bool:
+    normalized = _normalize_for_match(alias)
+    if not normalized:
+        return False
+    if len(normalized.split()) < 2:
+        return False
+    generic = {"museum", "muzeu", "national museum", "national history", "national art"}
+    return normalized not in generic
+
+
+def _is_museum_content_query(text: str) -> bool:
+    lowered = text.lower().strip()
+    if "museum" not in lowered and "muzeu" not in lowered:
+        return False
+    markers = (
+        "what kind of museum",
+        "what type of museum",
+        "what collections",
+        "what does",
+        "what is",
+        "what are",
+        "contains",
+        "contain",
+        "feature",
+        "features",
+        "collection",
+        "collections",
+    )
+    return any(marker in lowered for marker in markers)
+
+
+def _is_river_location_query(text: str) -> bool:
+    lowered = text.lower().strip()
+    if "river" not in lowered:
+        return False
+    markers = ("on which river", "which river", "what river", "stands on")
+    return any(marker in lowered for marker in markers)
+
+
+def _prefers_narrative_doc(text: str) -> bool:
+    lowered = text.lower().strip()
+    if "entrance" in lowered:
+        return True
+    prefixes = (
+        "what is ",
+        "what are ",
+        "what does ",
+        "what collections ",
+        "who ",
+        "when ",
+        "how tall ",
+        "how large ",
+        "how long ",
+        "how many ",
+        "which ",
+        "over what years ",
+    )
+    return lowered.startswith(prefixes)
+
+
+def _candidate_selection_score(extraction: dict, bm25_score: float, top_score: float) -> float:
+    if top_score <= 0:
+        retrieval_weight = 1.0
+    else:
+        retrieval_weight = max(bm25_score / top_score, 0.05)
+    return float(extraction["score"]) * retrieval_weight
+
+
 def _answer_looks_like_price(text: str) -> bool:
     lowered = text.lower()
     return _contains_any(lowered, _cfg_list("qa", "price_answer_markers"))
+
+
+def _answer_looks_like_definition(text: str) -> bool:
+    normalized = _normalize_for_match(text)
+    if not normalized:
+        return False
+    markers = (
+        "museum",
+        "park",
+        "palace",
+        "monastery",
+        "church",
+        "square",
+        "garden",
+        "gardens",
+        "city",
+        "river",
+        "landmark",
+        "avenue",
+    )
+    return any(marker in normalized for marker in markers)
+
+
+def _row_name_aliases(row: dict) -> list[str]:
+    names = [row.get("name_en", ""), row.get("name", "")]
+    names.extend(row.get("name_aliases", []) or [])
+    unique: list[str] = []
+    seen: set[str] = set()
+    for name in names:
+        normalized = _normalize_for_match(str(name))
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        unique.append(str(name))
+    return unique
+
+
+def _matching_narrative_chunks(names: list[str]) -> list[dict]:
+    normalized_names = [_normalize_for_match(name) for name in names if _normalize_for_match(name)]
+    matched: list[dict] = []
+    for chunk in _chunks:
+        doc_id = str(chunk.get("doc_id", ""))
+        if doc_id.startswith("structured_"):
+            continue
+        chunk_text_norm = _normalize_for_match(chunk.get("text", ""))
+        if not chunk_text_norm:
+            continue
+        if any(name in chunk_text_norm for name in normalized_names):
+            matched.append(chunk)
+
+    matched.sort(
+        key=lambda chunk: (
+            0 if str(chunk.get("chunk_id", "")).endswith("_000") else 1,
+            len(str(chunk.get("text", ""))),
+        )
+    )
+    return matched[:4]
+
+
+def _answer_museum_content_query(query: str) -> dict | None:
+    if not _museum_address_aliases:
+        return None
+    if not _is_museum_content_query(query):
+        return None
+
+    normalized_query = _normalize_for_match(query)
+    for alias, rows in _museum_address_aliases:
+        if not _is_specific_entity_alias(alias):
+            continue
+        if not _alias_in_query(alias, normalized_query):
+            continue
+
+        distinct_rows = _distinct_place_rows(rows)
+        if len(distinct_rows) > 1:
+            return _build_ambiguous_place_fallback(distinct_rows)
+
+        row = distinct_rows[0]
+        best_candidate: tuple[dict, dict] | None = None
+
+        for chunk in _matching_narrative_chunks(_row_name_aliases(row)):
+            extraction = extract_answer(query, chunk["text"])
+            if extraction["answer"] is None:
+                continue
+            if best_candidate is None or extraction["score"] > best_candidate[0]["score"]:
+                best_candidate = (extraction, chunk)
+
+        description = str(row.get("description", "")).strip()
+        if description:
+            structured_chunk = {
+                "doc_id": f"structured_{row.get('record_id', 'museum_record')}",
+                "chunk_id": None,
+                "text": description,
+            }
+            extraction = extract_answer(query, description)
+            if extraction["answer"] is not None and (best_candidate is None or extraction["score"] > best_candidate[0]["score"]):
+                best_candidate = (extraction, structured_chunk)
+
+        if best_candidate is None:
+            return None
+
+        extraction, chunk = best_candidate
+        if should_fallback_reader(extraction["score"]):
+            return None
+        return make_answer_response(answer=extraction["answer"], chunk=chunk, reader_score=extraction["score"])
+
+    return None
+
+
+def _answer_river_location_query(query: str) -> dict | None:
+    if not _is_river_location_query(query):
+        return None
+
+    results = retrieve(query, _bm25, _chunks, top_k=max(_RETRIEVAL_TOP_K, _READER_TOP_N))
+    patterns = (
+        r"\bstands on (?:the\s+)?river\s+([^.,;]+)",
+        r"\bis on (?:the\s+)?river\s+([^.,;]+)",
+    )
+
+    for item in results:
+        chunk = item["chunk"]
+        doc_id = str(chunk.get("doc_id", ""))
+        if doc_id.startswith("structured_"):
+            continue
+        text = str(chunk.get("text", ""))
+        for pattern in patterns:
+            match = re.search(pattern, text, flags=re.IGNORECASE)
+            if match is None:
+                continue
+            answer = match.group(1).strip()
+            if answer:
+                return make_answer_response(answer=answer, chunk=chunk, reader_score=0.9)
+
+    return None
 
 
 def load_qa_system(
@@ -1168,8 +1379,16 @@ def answer_question(query: str) -> dict:
     if place_address_answer is not None:
         return place_address_answer
 
+    museum_content_answer = _answer_museum_content_query(query)
+    if museum_content_answer is not None:
+        return museum_content_answer
+
+    river_answer = _answer_river_location_query(query)
+    if river_answer is not None:
+        return river_answer
+
     # 1. Retrieve top passages
-    results = retrieve(query, _bm25, _chunks, top_k=5)
+    results = retrieve(query, _bm25, _chunks, top_k=max(_RETRIEVAL_TOP_K, _READER_TOP_N))
 
     if not results:
         if _is_price_query(query):
@@ -1185,7 +1404,9 @@ def answer_question(query: str) -> dict:
     second_score = results[1]["score"] if len(results) > 1 else None
 
     # 2. Check retrieval fallback threshold
-    if should_fallback_retrieval(bm25_score, second_score):
+    retrieval_is_weak = should_fallback_retrieval(bm25_score, second_score)
+    retrieval_only_margin_is_weak = retrieval_is_weak and not should_fallback_retrieval(bm25_score, None)
+    if retrieval_is_weak and not (_prefers_narrative_doc(query) and retrieval_only_margin_is_weak):
         if _is_price_query(query):
             return make_fallback_response(
                 reason_code="UNSUPPORTED_PRICE_QUERY",
@@ -1193,13 +1414,13 @@ def answer_question(query: str) -> dict:
             )
         return make_fallback_response(reason_code="LOW_RETRIEVAL_CONFIDENCE")
 
-    # 3. Extract answer spans from top-N retrieved chunks and choose best by score.
+    # 3. Extract answer spans from top-N retrieved chunks and choose best by reader+retrieval score.
     candidates = []
     for item in results[:_READER_TOP_N]:
         chunk = item["chunk"]
         extraction = extract_answer(query, chunk["text"])
         if extraction["answer"] is not None:
-            candidates.append((extraction, chunk))
+            candidates.append((extraction, chunk, item["score"]))
 
     if not candidates:
         if _is_price_query(query):
@@ -1210,30 +1431,50 @@ def answer_question(query: str) -> dict:
         return make_fallback_response(reason_code="LOW_READER_CONFIDENCE")
 
     prioritized = candidates
+    if _prefers_narrative_doc(query):
+        narrative = []
+        for extraction, chunk, item_score in candidates:
+            doc_id = str(chunk.get("doc_id", ""))
+            if not doc_id.startswith("structured_"):
+                narrative.append((extraction, chunk, item_score))
+        if narrative:
+            prioritized = narrative
+
     if _is_symbolic_query(query):
         symbolic = []
         symbolic_markers = _cfg_list("qa", "symbolic_answer_markers")
-        for extraction, chunk in candidates:
+        for extraction, chunk, item_score in candidates:
             answer_l = extraction["answer"].lower()
             if _contains_any(answer_l, symbolic_markers):
-                symbolic.append((extraction, chunk))
+                symbolic.append((extraction, chunk, item_score))
         if symbolic:
             prioritized = symbolic
 
     if _is_exact_location_query(query):
         location_like = []
         location_markers = _cfg_list("qa", "location_answer_markers")
-        for extraction, chunk in candidates:
+        for extraction, chunk, item_score in candidates:
             answer_l = extraction["answer"].lower()
             has_address_token = _contains_any(answer_l, location_markers)
             has_number = re.search(r"\d", answer_l) is not None
             looks_phone = re.search(r"\b\d{2,4}[/.:-]\d", answer_l) is not None
             if has_address_token and has_number and not looks_phone:
-                location_like.append((extraction, chunk))
+                location_like.append((extraction, chunk, item_score))
         if location_like:
             prioritized = location_like
 
-    best_extraction, best_chunk_for_answer = max(prioritized, key=lambda pair: pair[0]["score"])
+    if _is_definition_query(query):
+        definition_like = []
+        for extraction, chunk, item_score in prioritized:
+            if _answer_looks_like_definition(extraction["answer"]):
+                definition_like.append((extraction, chunk, item_score))
+        if definition_like:
+            prioritized = definition_like
+
+    best_extraction, best_chunk_for_answer, _ = max(
+        prioritized,
+        key=lambda item: _candidate_selection_score(item[0], item[2], bm25_score),
+    )
 
     # 4. Check reader fallback threshold
     if should_fallback_reader(best_extraction["score"]):

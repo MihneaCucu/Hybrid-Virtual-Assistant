@@ -15,15 +15,10 @@
 {"id":"demo_16","query":"Who is the president of France?","expected_status":"fallback","notes":"out of domain should fallback"}
 {"id":"demo_17","query":"How much does parking cost in Bucharest city center?","expected_status":"fallback","notes":"unsupported pricing query"}
 {"id":"demo_18","query":"What metro station is Antipa Museum at?","expected_status":"answered","notes":"alias-based museum->metro link"}
-{"id":"demo_19","query":"Where is Ahmad Cuisine?","expected_status":"answered","notes":"restaurant address from structured data"}
-{"id":"demo_20","query":"What cuisine does Al Wady serve?","expected_status":"answered","notes":"restaurant cuisine fact"}
-{"id":"demo_21","query":"What metro station is Ahmad Cuisine at?","expected_status":"answered","notes":"restaurant->metro link via generic linker"}
-{"id":"demo_22","query":"How much is dinner at Ahmad Cuisine?","expected_status":"fallback","notes":"restaurant pricing not supported in static QA KB"}
-{"id":"demo_23","query":"Show metro as well as STB stations near Romanian Athenaeum","expected_status":"answered","notes":"nearby transport stops with line numbers"}
-{"id":"demo_24","query":"What transport stations are near Stradale?","expected_status":"fallback","notes":"ambiguous multi-location chain should request disambiguation"}
-{"id":"demo_25","query":"Where is Meron?","expected_status":"answered","notes":"coffee shop exact address"}
-{"id":"demo_26","query":"What metro station is Meron at?","expected_status":"answered","notes":"coffee shop nearest metro station"}
-{"id":"demo_27","query":"Where is 5 to go?","expected_status":"fallback","notes":"multi-location coffee chain should trigger disambiguation fallback"}
+{"id":"demo_19","query":"Show metro as well as STB stations near Romanian Athenaeum","expected_status":"answered","notes":"nearby transport stops with line numbers"}
+{"id":"demo_20","query":"What is the exact address of the National Museum of Art of Romania?","expected_status":"answered","notes":"structured museum address"}
+{"id":"demo_21","query":"What metro station is Cismigiu Gardens at?","expected_status":"answered","notes":"landmark nearest metro"}
+{"id":"demo_22","query":"Set a reminder for tomorrow and tell me where University Square is.","expected_status":"handoff","notes":"mixed command plus information query"}
 {"id":"demo_28","query":"What season is best to visit Bucharest?","expected_status":"answered","notes":"curated travel guidance seasonality"}
 {"id":"demo_29","query":"What is the budget for visiting Bucharest?","expected_status":"answered","notes":"curated travel guidance budget ranges"}
 {"id":"demo_30","query":"How many days should I stay in Bucharest?","expected_status":"answered","notes":"curated travel guidance trip length"}

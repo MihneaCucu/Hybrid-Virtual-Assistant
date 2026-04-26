@@ -1,0 +1,3 @@
+# data/ — QA test sets and downloaded datasets.
+# test_set.json and negative_test_set.jsonl are committed.
+# dev-v2.0.json (SQuAD 2.0, ~4 MB) is gitignored — download manually.
