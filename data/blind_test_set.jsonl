@@ -1,0 +1,25 @@
+{"id":"blind_001","question":"Which river runs through Bucharest?","expected_status":"answered","accepted_answers":["Dambovita","Dâmbovița"],"gold_doc":"bucharest_city","category":"paraphrase"}
+{"id":"blind_002","question":"What is the Parliament Palace used for?","expected_status":"answered","accepted_answers":["Parliament of Romania"],"gold_doc":"palace_of_the_parliament","category":"paraphrase"}
+{"id":"blind_003","question":"Tell me what Arcul de Triumf commemorates.","expected_status":"answered","accepted_answers":["First World War","Romania's victory"],"gold_doc":"arcul_de_triumf","category":"paraphrase"}
+{"id":"blind_004","question":"What kind of place is King Michael I Park?","expected_status":"answered","accepted_answers":["large park","northern side of Bucharest","Lake Herastrau"],"gold_doc":"king_michael_park","category":"definition"}
+{"id":"blind_005","question":"When did the Romanian Athenaeum open?","expected_status":"answered","accepted_answers":["1888"],"gold_doc":"romanian_athenaeum","category":"factoid"}
+{"id":"blind_006","question":"Where exactly can I find Antipa Museum?","expected_status":"answered","accepted_answers":["Șos. General Kiseleff Pavel nr. 1","Kiseleff","sector 1"],"gold_doc":"structured_museum_00012","category":"structured_address"}
+{"id":"blind_007","question":"Closest metro stop for Romanian Athenaeum?","expected_status":"answered","accepted_answers":["Piața Romană","Piata Romana"],"gold_doc":"structured_place_metro_osm_place_romanian_athenaeum","category":"structured_metro"}
+{"id":"blind_008","question":"Which metro should I use for Cismigiu Gardens?","expected_status":"answered","accepted_answers":["Izvor"],"gold_doc":"structured_place_metro_osm_place_cismigiu_gardens","category":"structured_metro"}
+{"id":"blind_009","question":"Give me transport stops around the Romanian Athenaeum.","expected_status":"answered","accepted_answers":["Piața Romană","Bd. Nicolae Balcescu","Nearby transport"],"gold_doc":"structured_place_metro_osm_place_romanian_athenaeum","category":"nearby_transport"}
+{"id":"blind_010","question":"How long should a first Bucharest trip be?","expected_status":"answered","accepted_answers":["2-3","2 to 3","full days"],"gold_doc":"curated_bucharest_travel_guidance","category":"travel_guidance"}
+{"id":"blind_011","question":"When is a comfortable time to visit Bucharest?","expected_status":"answered","accepted_answers":["late spring","early autumn","April","September"],"gold_doc":"curated_bucharest_travel_guidance","category":"travel_guidance"}
+{"id":"blind_012","question":"What daily money range should I plan for Bucharest?","expected_status":"answered","accepted_answers":["45-70","80-140","EUR"],"gold_doc":"curated_bucharest_travel_guidance","category":"travel_guidance"}
+{"id":"blind_013","question":"Who won Eurovision this year?","expected_status":"fallback","category":"out_of_domain_live"}
+{"id":"blind_014","question":"What is the weather in Bucharest right now?","expected_status":"fallback","category":"live_fact"}
+{"id":"blind_015","question":"Can you buy me a museum ticket?","expected_status":"handoff","category":"command_or_booking"}
+{"id":"blind_016","question":"Book dinner near the Athenaeum and tell me the metro station.","expected_status":"handoff","category":"mixed_command_info"}
+{"id":"blind_017","question":"How much is parking near Cismigiu today?","expected_status":"fallback","category":"live_price"}
+{"id":"blind_018","question":"Tell me a joke about Bucharest traffic.","expected_status":"fallback","category":"chitchat"}
+{"id":"blind_019","question":"What is the phone number of the moon?","expected_status":"fallback","category":"nonsense"}
+{"id":"blind_020","question":"Where is the Eiffel Tower?","expected_status":"fallback","category":"out_of_domain"}
+{"id":"blind_021","question":"Set an alarm and explain the Romanian Athenaeum.","expected_status":"handoff","category":"mixed_command_info"}
+{"id":"blind_022","question":"What collections are in the national art museum in Bucharest?","expected_status":"answered","accepted_answers":["medieval and modern Romanian art","international collection","Romanian art"],"gold_doc":"national_museum_of_art_of_romania","category":"paraphrase"}
+{"id":"blind_023","question":"What items does the history museum contain?","expected_status":"answered","accepted_answers":["historical artifacts","Crown Jewels","Trajan"],"gold_doc":"national_museum_of_romanian_history","category":"paraphrase"}
+{"id":"blind_024","question":"What is the closest station to Arcul de Triumf?","expected_status":"answered","accepted_answers":["Aviatorilor"],"gold_doc":"structured_place_metro_osm_place_arcul_de_triumf","category":"structured_metro"}
+{"id":"blind_025","question":"Where is Stavropoleos located exactly?","expected_status":"answered","accepted_answers":["Post Street 6","Post Street","Bucharest"],"gold_doc":"structured_osm_place_stavropoleos_monastery","category":"structured_address"}

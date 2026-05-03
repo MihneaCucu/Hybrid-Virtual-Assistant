@@ -1,0 +1,6 @@
+{"id":"story_01","query":"What collections does the National Museum of Art of Romania feature?","expected_status":"answered","story_point":"Narrative Q&A from a museum document"}
+{"id":"story_02","query":"What does the National History Museum of Romania contain?","expected_status":"answered","story_point":"Museum-content Q&A, not just addresses"}
+{"id":"story_03","query":"What does Arcul de Triumf symbolize?","expected_status":"answered","story_point":"Short extracted landmark fact"}
+{"id":"story_04","query":"Show metro as well as STB stations near Romanian Athenaeum","expected_status":"answered","story_point":"Structured assistant-style local transport answer"}
+{"id":"story_05","query":"How much is a metro ticket in Bucharest?","expected_status":"fallback","story_point":"Safe fallback for live price information"}
+{"id":"story_06","query":"Set a reminder for tomorrow and tell me where University Square is.","expected_status":"handoff","story_point":"Mixed command plus Q&A is handed off to the router/dialogue manager"}

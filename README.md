@@ -19,6 +19,8 @@ The assistant handles three types of input:
 Hybrid-Virtual-Assistant/
 ├── qa/                    # Knowledge/QA module (public API: qa_module.py)
 │   ├── qa_module.py       ← ONLY file teammates should import
+│   ├── types.py           ← Stable Q&A response contract
+│   ├── routing.py         ← Shared question/command marker helpers
 │   ├── retrieval.py       ← BM25 indexing and retrieval (internal)
 │   ├── reader.py          ← Extractive QA reader (internal)
 │   └── fallback.py        ← Confidence scoring and fallback logic (internal)
@@ -34,7 +36,10 @@ Hybrid-Virtual-Assistant/
 │   ├── build_index.py     ← Chunking + BM25 index builder
 │   ├── rebuild_qa_kb.py   ← One-command KB rebuild pipeline
 │   ├── validate_kb_sources.py ← Source registry validator
-│   └── evaluate_qa.py     ← QA evaluation metrics
+│   ├── evaluate_qa.py     ← QA evaluation metrics
+│   ├── evaluate_qa_blind.py ← Blind/stress evaluation
+│   ├── compare_qa_ablation.py ← Method ablation comparison
+│   └── run_qa_story_check.py ← Final QA story validation
 ├── kb/
 │   ├── raw/               ← Raw Wikipedia text (one .txt per document)
 │   ├── clean/             ← Cleaned documents (committed to git)
@@ -47,10 +52,14 @@ Hybrid-Virtual-Assistant/
 │   ├── bucharest_travel_guidance.json ← Curated travel guidance facts (season/budget/days)
 │   ├── test_set.json             ← Local positive QA eval set
 │   ├── negative_test_set.jsonl   ← Local unanswerable/mixed eval set
+│   ├── blind_test_set.jsonl      ← Blind/stress eval set
 │   └── qa_annotation_template_bucharest.jsonl ← Template for creating final eval set
 ├── docs/
-│   ├── qa_implementation_plan.md ← QA lead implementation roadmap
+│   ├── qa_final_report_section.md ← Report-ready QA section
+│   ├── qa_confidence_and_fallback.md ← Thresholds, statuses, reason codes
+│   ├── qa_data_provenance.md     ← Runtime source provenance
 │   └── qa_dataset_research.md    ← Curated dataset/source decisions
+├── tests/                 ← Contract, golden, and hybrid demo tests
 ├── results/               ← Evaluation output (gitignored, regenerated)
 └── requirements.txt
 ```
@@ -85,6 +94,9 @@ python scripts/build_index.py
 
 # One-command full QA KB rebuild (recommended):
 python scripts/rebuild_qa_kb.py
+
+# Final report/demo profile: smaller Bucharest tourist-guide KB
+python scripts/rebuild_qa_kb.py --no-network-fetch --final-demo
 
 # Optional: add structured sources before indexing
 # Transit:
@@ -187,6 +199,27 @@ python scripts/evaluate_qa.py \
 ```
 
 Results are saved to `results/`.
+The evaluator writes both `results/qa_eval_summary.json` and
+`results/qa_eval_details.jsonl` for error analysis.
+
+Inspect concrete retrieval and reader failures:
+
+```bash
+python scripts/show_eval_errors.py --limit 10
+```
+
+Compare the top-BM25 retrieval-only baseline with the full Q&A module:
+
+```bash
+python scripts/compare_qa_baselines.py
+```
+
+Run blind/stress evaluation and ablation:
+
+```bash
+python scripts/evaluate_qa_blind.py
+python scripts/compare_qa_ablation.py
+```
 
 ## Demo Run
 
@@ -194,8 +227,53 @@ Results are saved to `results/`.
 # Run presentation demo queries:
 python scripts/demo_qa.py
 
+# Run presentation demo queries with grounding sources:
+python scripts/demo_qa.py --show-sources
+
+# Run broader local question coverage:
+python scripts/demo_qa.py --queries data/demo_queries_extended.jsonl --show-sources
+
 # Optional: run only first N queries
 python scripts/demo_qa.py --limit 8
+```
+
+## Knowledge/Q&A Lead Workflow
+
+```bash
+python scripts/rebuild_qa_kb.py --no-network-fetch --final-demo
+python scripts/evaluate_qa.py
+python scripts/show_eval_errors.py --limit 10
+python scripts/compare_qa_baselines.py
+python scripts/evaluate_qa_blind.py
+python scripts/compare_qa_ablation.py
+python scripts/demo_qa.py --show-sources
+python scripts/generate_qa_story_assets.py
+```
+
+Use this workflow for the Knowledge/Q&A report section and final presentation. It rebuilds the final Bucharest tourist-guide KB, evaluates positive and unsupported examples, inspects concrete errors, compares against a retrieval-only baseline, and runs the grounded demo.
+
+For a compact final pre-presentation check:
+
+```bash
+python scripts/run_qa_story_check.py
+```
+
+Report and presentation notes for the Knowledge/Q&A lead:
+
+- `docs/qa_final_report_section.md` - report-ready draft section.
+- `docs/qa_demo_script.md` - final live demo flow and speaking points.
+- `docs/qa_report_notes.md` - concise technical notes and current metrics.
+- `docs/qa_story_assets.md` - generated slide/report numbers and six-question story demo.
+- `docs/qa_slide_outline.md` - suggested slides for the Knowledge/Q&A part.
+- `docs/qa_defense_questions.md` - likely examiner questions and concise answers.
+- `docs/qa_confidence_and_fallback.md` - thresholds, statuses, and reason codes.
+- `docs/qa_data_provenance.md` - runtime data sources and methodology references.
+- `docs/qa_question_bank.md` - broader local question examples grouped by capability.
+
+Run the production-style tests:
+
+```bash
+pytest
 ```
 
 ## Interactive Terminal Chat
@@ -206,6 +284,9 @@ python scripts/chat_cli.py
 
 # Optional: include debug metadata per answer
 python scripts/chat_cli.py --show-meta
+
+# Hybrid assistant story demo: command simulation + Q&A + fallback/handoff
+python scripts/hybrid_demo_cli.py --story --show-meta
 ```
 
 ---

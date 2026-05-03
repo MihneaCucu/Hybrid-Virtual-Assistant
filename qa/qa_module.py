@@ -28,6 +28,8 @@ from urllib.parse import urlparse
 
 from qa.retrieval import load_index, retrieve
 from qa.reader import load_reader, extract_answer
+from qa.routing import looks_like_command, looks_like_question
+from qa.types import QAResponse, QASource, QAStatus
 from qa.fallback import (
     make_answer_response,
     make_fallback_response,
@@ -58,11 +60,11 @@ _MAX_LISTING_RESULTS = 5
 
 DEFAULT_DOMAIN_CONFIG = {
     "nlu": {
-        "question_markers": ["what", "when", "where", "who", "why", "how", "which", "tell me", "is", "are", "can"],
-        "command_markers": ["set", "book", "schedule", "create", "add", "cancel", "remind"],
+        "question_markers": ["what", "when", "where", "who", "why", "how", "which", "tell me", "explain", "is", "are", "can"],
+        "command_markers": ["set", "book", "schedule", "create", "add", "cancel", "remind", "alarm", "buy"],
     },
     "qa": {
-        "metro_station_markers": ["metro station", "subway station", "station", "metro line", "subway line"],
+        "metro_station_markers": ["metro station", "subway station", "station", "metro line", "subway line", "metro"],
         "metro_relation_markers": ["at", "near", "nearest", "closest", "for", "to"],
         "metro_target_markers": ["museum", "muzeu", "restaurant", "food", "coffee", "cafe", "park", "square", "monastery", "palace", "athenaeum", "landmark"],
         "transport_nearby_markers": ["near", "nearby", "around", "vicinity", "close to", "in vicinity"],
@@ -72,9 +74,9 @@ DEFAULT_DOMAIN_CONFIG = {
         "price_query_markers": ["how much", "price", "cost", "fare", "ticket"],
         "transit_markers": ["metro", "subway", "bus", "tram", "transport", "ticket", "fare", "stb", "metrorex"],
         "parking_markers": ["parking", "parcare", "park fee", "parking fee"],
-        "travel_markers": ["visit", "travel", "trip", "vacation", "holiday", "stay", "days", "itinerary", "budget", "season"],
-        "season_query_markers": ["best season", "best time", "when to visit", "season to visit", "when should i visit"],
-        "budget_query_markers": ["budget", "how much", "cost", "daily budget", "per day", "expenses"],
+        "travel_markers": ["visit", "travel", "trip", "vacation", "holiday", "stay", "days", "itinerary", "budget", "season", "plan"],
+        "season_query_markers": ["best season", "best time", "comfortable time", "when to visit", "season to visit", "when should i visit"],
+        "budget_query_markers": ["budget", "how much", "cost", "daily budget", "money range", "per day", "expenses"],
         "days_query_markers": ["how many days", "days to stay", "how long to stay", "trip length", "itinerary"],
         "symbolic_query_markers": ["symbolize", "symbolise", "commemorate", "historical event"],
         "exact_location_query_markers": ["exact address", "street", "number", "where exactly", "exact location"],
@@ -98,15 +100,11 @@ DEFAULT_DOMAIN_CONFIG = {
 
 
 def _looks_like_question(text: str) -> bool:
-    lowered = text.lower().strip()
-    if "?" in lowered:
-        return True
-    return _contains_any_word(lowered, _cfg_list("nlu", "question_markers"))
+    return looks_like_question(text, _cfg_list("nlu", "question_markers"))
 
 
 def _looks_like_command(text: str) -> bool:
-    lowered = text.lower().strip()
-    return _contains_any_word(lowered, _cfg_list("nlu", "command_markers"))
+    return looks_like_command(text, _cfg_list("nlu", "command_markers"))
 
 
 def _normalize_for_match(text: str) -> str:
@@ -324,6 +322,30 @@ def _build_ambiguous_place_fallback(rows: list[dict]) -> dict:
         reason_code="AMBIGUOUS_PLACE_NAME",
         answer=f"I found multiple locations for {place_name}. Please specify one: {options_text}.",
     )
+
+
+def _make_rule_answer_response(
+    answer: str,
+    source_doc: str | None,
+    reason_code: str,
+    confidence: float,
+    sources: list[dict] | None = None,
+) -> dict:
+    typed_sources = []
+    raw_sources = sources or ([{"doc_id": source_doc, "chunk_id": None}] if source_doc else [])
+    for source in raw_sources:
+        doc_id = source.get("doc_id")
+        if doc_id:
+            typed_sources.append(QASource(doc_id=str(doc_id), chunk_id=source.get("chunk_id")))
+    return QAResponse(
+        status=QAStatus.ANSWERED,
+        reason_code=reason_code,
+        answer=answer,
+        source_doc=source_doc,
+        sources=typed_sources,
+        confidence=confidence,
+        fallback=False,
+    ).to_dict()
 
 
 def _distinct_place_rows(rows: list[dict]) -> list[dict]:
@@ -750,15 +772,12 @@ def _answer_place_listing_query(query: str) -> dict | None:
             answer = f"{prefix}."
 
     source_doc = f"structured_{shown[0].get('record_id', '')}" if shown else None
-    return {
-        "status": "answered",
-        "reason_code": "RULE_BASED_PLACE_LIST_MATCH",
-        "answer": answer,
-        "source_doc": source_doc,
-        "sources": [{"doc_id": source_doc, "chunk_id": None}] if source_doc else [],
-        "confidence": 0.97,
-        "fallback": False,
-    }
+    return _make_rule_answer_response(
+        answer=answer,
+        source_doc=source_doc,
+        reason_code="RULE_BASED_PLACE_LIST_MATCH",
+        confidence=0.97,
+    )
 
 
 def _looks_like_travel_query(normalized_query: str) -> bool:
@@ -817,15 +836,12 @@ def _answer_travel_guidance_query(query: str) -> dict | None:
         return None
 
     final_answer = f"For {city}: {answer}"
-    return {
-        "status": "answered",
-        "reason_code": "RULE_BASED_TRAVEL_GUIDANCE",
-        "answer": final_answer,
-        "source_doc": source_doc,
-        "sources": [{"doc_id": source_doc, "chunk_id": None}],
-        "confidence": 0.96,
-        "fallback": False,
-    }
+    return _make_rule_answer_response(
+        answer=final_answer,
+        source_doc=source_doc,
+        reason_code="RULE_BASED_TRAVEL_GUIDANCE",
+        confidence=0.96,
+    )
 
 
 def _is_nearby_transport_query(text: str) -> bool:
@@ -948,15 +964,13 @@ def _answer_nearby_transport_query(query: str) -> dict | None:
         _ = dist
         sources.append({"doc_id": f"structured_stop_{stop.get('stop_id', '')}", "chunk_id": None})
 
-    return {
-        "status": "answered",
-        "reason_code": "RULE_BASED_NEARBY_TRANSPORT_MATCH",
-        "answer": answer,
-        "source_doc": source_doc,
-        "sources": sources,
-        "confidence": 0.98,
-        "fallback": False,
-    }
+    return _make_rule_answer_response(
+        answer=answer,
+        source_doc=source_doc,
+        reason_code="RULE_BASED_NEARBY_TRANSPORT_MATCH",
+        confidence=0.98,
+        sources=sources,
+    )
 
 
 def _answer_museum_metro_query(query: str) -> dict | None:
@@ -984,15 +998,12 @@ def _answer_museum_metro_query(query: str) -> dict | None:
             distance = row.get("distance_m", "unknown")
             source_doc = f"structured_{row.get('record_id', 'place_metro_link')}"
             answer = f"The nearest metro station to {place_name} is {station} (about {distance} meters)."
-            return {
-                "status": "answered",
-                "reason_code": "RULE_BASED_LINK_MATCH",
-                "answer": answer,
-                "source_doc": source_doc,
-                "sources": [{"doc_id": source_doc, "chunk_id": None}],
-                "confidence": 0.99,
-                "fallback": False,
-            }
+            return _make_rule_answer_response(
+                answer=answer,
+                source_doc=source_doc,
+                reason_code="RULE_BASED_LINK_MATCH",
+                confidence=0.99,
+            )
     return None
 
 
@@ -1016,15 +1027,12 @@ def _answer_museum_address_query(query: str) -> dict | None:
                 return None
             answer = f"The exact address of {museum_name} is {address}."
             source_doc = f"structured_{row.get('record_id', 'museum_record')}"
-            return {
-                "status": "answered",
-                "reason_code": "RULE_BASED_ADDRESS_MATCH",
-                "answer": answer,
-                "source_doc": source_doc,
-                "sources": [{"doc_id": source_doc, "chunk_id": None}],
-                "confidence": 0.99,
-                "fallback": False,
-            }
+            return _make_rule_answer_response(
+                answer=answer,
+                source_doc=source_doc,
+                reason_code="RULE_BASED_ADDRESS_MATCH",
+                confidence=0.99,
+            )
     return None
 
 
@@ -1048,15 +1056,12 @@ def _answer_place_address_query(query: str) -> dict | None:
                 return None
             answer = f"The exact address of {place_name} is {address}."
             source_doc = f"structured_{row.get('record_id', 'osm_place')}"
-            return {
-                "status": "answered",
-                "reason_code": "RULE_BASED_PLACE_ADDRESS_MATCH",
-                "answer": answer,
-                "source_doc": source_doc,
-                "sources": [{"doc_id": source_doc, "chunk_id": None}],
-                "confidence": 0.99,
-                "fallback": False,
-            }
+            return _make_rule_answer_response(
+                answer=answer,
+                source_doc=source_doc,
+                reason_code="RULE_BASED_PLACE_ADDRESS_MATCH",
+                confidence=0.99,
+            )
     return None
 
 
@@ -1077,7 +1082,8 @@ def _is_exact_location_query(text: str) -> bool:
 
 def _is_definition_query(text: str) -> bool:
     lowered = text.lower().strip()
-    return lowered.startswith("what is ") or lowered.startswith("what are ")
+    prefixes = ("what is ", "what are ", "what kind of place ", "what kind of place is ")
+    return lowered.startswith(prefixes)
 
 
 def _is_specific_entity_alias(alias: str) -> bool:
@@ -1126,6 +1132,8 @@ def _prefers_narrative_doc(text: str) -> bool:
     prefixes = (
         "what is ",
         "what are ",
+        "what kind of place ",
+        "what kind of place is ",
         "what does ",
         "what collections ",
         "who ",

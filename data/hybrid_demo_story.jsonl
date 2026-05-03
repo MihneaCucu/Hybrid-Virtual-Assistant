@@ -1,0 +1,6 @@
+{"id":"hybrid_01","query":"Set a reminder for 9 AM tomorrow.","expected_route":"command","story_point":"Command branch is detected and simulated"}
+{"id":"hybrid_02","query":"What collections does the National Museum of Art of Romania feature?","expected_route":"qa","story_point":"Knowledge/Q&A answers a narrative museum question"}
+{"id":"hybrid_03","query":"Show metro as well as STB stations near Romanian Athenaeum","expected_route":"qa","story_point":"Knowledge/Q&A answers a structured local transport question"}
+{"id":"hybrid_04","query":"How much is a metro ticket in Bucharest?","expected_route":"fallback","story_point":"Unsupported live price information falls back safely"}
+{"id":"hybrid_05","query":"Set a reminder for tomorrow and tell me where University Square is.","expected_route":"handoff","story_point":"Mixed command plus Q&A is handed off"}
+{"id":"hybrid_06","query":"Tell me a joke about computers.","expected_route":"fallback","story_point":"Out-of-domain chit-chat is rejected"}

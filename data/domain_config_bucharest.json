@@ -9,6 +9,7 @@
       "how",
       "which",
       "tell me",
+      "explain",
       "is",
       "are",
       "can"
@@ -20,7 +21,9 @@
       "create",
       "add",
       "cancel",
-      "remind"
+      "remind",
+      "alarm",
+      "buy"
     ]
   },
   "qa": {
@@ -29,7 +32,8 @@
       "subway station",
       "station",
       "metro line",
-      "subway line"
+      "subway line",
+      "metro"
     ],
     "metro_relation_markers": [
       "at",
@@ -120,11 +124,13 @@
       "days",
       "itinerary",
       "budget",
-      "season"
+      "season",
+      "plan"
     ],
     "season_query_markers": [
       "best season",
       "best time",
+      "comfortable time",
       "when to visit",
       "season to visit",
       "when should i visit"
@@ -134,6 +140,7 @@
       "how much",
       "cost",
       "daily budget",
+      "money range",
       "per day",
       "expenses"
     ],
