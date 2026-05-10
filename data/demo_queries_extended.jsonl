@@ -28,3 +28,8 @@
 {"id":"ext_028","query":"How much is a metro ticket in Bucharest?","expected_status":"fallback","question_type":"unsupported_live_price","story_point":"Live price fallback"}
 {"id":"ext_029","query":"Who is the president of France?","expected_status":"fallback","question_type":"out_of_domain","story_point":"Out-of-domain fallback"}
 {"id":"ext_030","query":"Set a reminder for tomorrow and tell me where University Square is.","expected_status":"handoff","question_type":"mixed_command_info","story_point":"Mixed command/Q&A handoff"}
+{"id":"ext_031","query":"How should I plan a Bucharest trip?","expected_status":"answered","question_type":"travel_guidance_overview","story_point":"Combined curated planning guidance"}
+{"id":"ext_032","query":"Can you reserve a hotel in Bucharest?","expected_status":"handoff","question_type":"booking_handoff","story_point":"Booking-style request is not handled by Q&A"}
+{"id":"ext_033","query":"How do I get to the Palace of the Parliament?","expected_status":"answered","question_type":"directions_transport","story_point":"Directions-style question returns a grounded transport summary instead of a one-word reader span"}
+{"id":"ext_034","query":"How can I reach Romanian Athenaeum?","expected_status":"answered","question_type":"directions_transport","story_point":"Directions-style question reuses structured metro and STB evidence"}
+{"id":"ext_035","query":"What transport should I take to Village Museum?","expected_status":"answered","question_type":"directions_transport","story_point":"Static local directions are answered as transport summaries, not live navigation"}

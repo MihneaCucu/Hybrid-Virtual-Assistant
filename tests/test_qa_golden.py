@@ -60,3 +60,75 @@ def test_golden_fallback_and_handoff(question: str, expected_status: str, reason
     assert result["status"] == expected_status
     if reason_code is not None:
         assert result["reason_code"] == reason_code
+
+
+@pytest.mark.parametrize(
+    ("question", "required_fragments"),
+    [
+        (
+            "How do I get to the Palace of the Parliament?",
+            ["nearest metro", "not live turn-by-turn navigation"],
+        ),
+        (
+            "How can I reach Romanian Athenaeum?",
+            ["Piața Romană", "not live turn-by-turn navigation"],
+        ),
+        (
+            "What transport should I take to Village Museum?",
+            ["local transport summary", "not live turn-by-turn navigation"],
+        ),
+    ],
+)
+def test_golden_directions_answers(question: str, required_fragments: list[str]) -> None:
+    result = answer_question(question)
+    answer = str(result["answer"])
+
+    assert result["status"] == "answered"
+    assert result["reason_code"] == "RULE_BASED_DIRECTIONS_TRANSPORT_MATCH"
+    assert str(result["source_doc"]).startswith("structured_")
+    for fragment in required_fragments:
+        assert fragment.lower() in answer.lower()
+
+
+@pytest.mark.parametrize(
+    ("question", "expected_source", "required_fragments"),
+    [
+        (
+            "What is the Romanian Athenaeum?",
+            "romanian_athenaeum",
+            ["concert hall", "1888", "George Enescu", "central Bucharest"],
+        ),
+        (
+            "Tell me about the Palace of the Parliament.",
+            "palace_of_the_parliament",
+            ["Nicolae Ceaușescu", "1984", "Bucharest"],
+        ),
+        (
+            "What can I see at the Village Museum?",
+            "village_museum",
+            ["traditional houses", "churches", "Romanian"],
+        ),
+        (
+            "Where is the Romanian Athenaeum?",
+            "structured_osm_place_romanian_athenaeum",
+            ["Strada Benjamin Franklin 1-3", "Bucharest"],
+        ),
+        (
+            "Why visit Cișmigiu Gardens?",
+            "cismigiu_gardens",
+            ["walk", "green", "city center"],
+        ),
+    ],
+)
+def test_golden_rich_entity_profile_answers(
+    question: str,
+    expected_source: str,
+    required_fragments: list[str],
+) -> None:
+    result = answer_question(question)
+    answer = str(result["answer"])
+
+    assert result["status"] == "answered"
+    assert result["source_doc"] == expected_source
+    for fragment in required_fragments:
+        assert fragment.lower() in answer.lower()

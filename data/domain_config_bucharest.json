@@ -17,6 +17,7 @@
     "command_markers": [
       "set",
       "book",
+      "reserve",
       "schedule",
       "create",
       "add",
@@ -76,6 +77,19 @@
       "bus",
       "tram",
       "trolleybus"
+    ],
+    "directions_query_markers": [
+      "get to",
+      "go to",
+      "reach",
+      "arrive at",
+      "travel to",
+      "directions to",
+      "how do i get",
+      "how can i get",
+      "how to get",
+      "how to go",
+      "what transport should i take"
     ],
     "address_markers": [
       "address",

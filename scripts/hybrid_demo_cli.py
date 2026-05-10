@@ -17,7 +17,7 @@ from qa.routing import looks_like_command, looks_like_question, looks_like_unsup
 QUIT_WORDS = {"quit", "exit", ":q", "/q"}
 DEFAULT_QUERIES = Path("data/hybrid_demo_story.jsonl")
 
-def _compact(text: Any, max_len: int = 220) -> str:
+def _compact(text: Any, max_len: int = 500) -> str:
     if text is None:
         return ""
     compact = " ".join(str(text).split())
@@ -118,8 +118,9 @@ def _load_queries(path: Path) -> list[dict[str, Any]]:
     return rows
 
 
-def _print_result(result: dict[str, Any], show_meta: bool) -> None:
-    print(f"Assistant: {_compact(result.get('answer'))}")
+def _print_result(result: dict[str, Any], show_meta: bool, full_answer: bool = False) -> None:
+    answer = str(result.get("answer") or "")
+    print(f"Assistant: {answer if full_answer else _compact(answer)}")
     if show_meta:
         print(
             "[meta] "
@@ -131,7 +132,7 @@ def _print_result(result: dict[str, Any], show_meta: bool) -> None:
         )
 
 
-def _run_scripted(path: Path, show_meta: bool) -> None:
+def _run_scripted(path: Path, show_meta: bool, full_answer: bool = False) -> None:
     rows = _load_queries(path)
     if not rows:
         raise SystemExit(f"No queries loaded from: {path}")
@@ -150,7 +151,7 @@ def _run_scripted(path: Path, show_meta: bool) -> None:
 
         print(f"[{idx:02d}] {row.get('id', f'q{idx}')}")
         print(f"You: {query}")
-        _print_result(result, show_meta=show_meta)
+        _print_result(result, show_meta=show_meta, full_answer=full_answer)
         if expected:
             print(f"Expected route: {expected} | Got: {got} | Match: {'yes' if got == expected else 'no'}")
         if row.get("story_point"):
@@ -161,7 +162,7 @@ def _run_scripted(path: Path, show_meta: bool) -> None:
         print(f"Route match: {matched}/{expected_count} = {matched / expected_count:.3f}")
 
 
-def _run_interactive(show_meta: bool) -> None:
+def _run_interactive(show_meta: bool, full_answer: bool = False) -> None:
     print("Hybrid assistant demo ready.")
     print("Type a command or a Bucharest tourist-guide question. Type 'quit' or 'exit' to stop.\n")
 
@@ -178,7 +179,7 @@ def _run_interactive(show_meta: bool) -> None:
             print("Session closed.")
             return
 
-        _print_result(route_request(user_text), show_meta=show_meta)
+        _print_result(route_request(user_text), show_meta=show_meta, full_answer=full_answer)
         print()
 
 
@@ -187,15 +188,16 @@ def main() -> None:
     parser.add_argument("--queries", help=f"Run a scripted JSONL demo instead of interactive mode, for example {DEFAULT_QUERIES}.")
     parser.add_argument("--story", action="store_true", help=f"Shortcut for --queries {DEFAULT_QUERIES}.")
     parser.add_argument("--show-meta", action="store_true", help="Print route/status/source/confidence metadata.")
+    parser.add_argument("--full-answer", action="store_true", help="Print full assistant answers without truncating long text.")
     args = parser.parse_args()
 
     load_qa_system()
 
     query_path = Path(args.queries) if args.queries else (DEFAULT_QUERIES if args.story else None)
     if query_path is not None:
-        _run_scripted(query_path, show_meta=args.show_meta)
+        _run_scripted(query_path, show_meta=args.show_meta, full_answer=args.full_answer)
     else:
-        _run_interactive(show_meta=args.show_meta)
+        _run_interactive(show_meta=args.show_meta, full_answer=args.full_answer)
 
 
 if __name__ == "__main__":
