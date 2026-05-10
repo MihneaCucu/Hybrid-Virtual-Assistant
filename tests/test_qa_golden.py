@@ -50,6 +50,8 @@ def test_golden_answered_questions(question: str, expected_status: str, expected
     ("question", "expected_status", "reason_code"),
     [
         ("How much is a metro ticket in Bucharest?", "fallback", "UNSUPPORTED_PRICE_QUERY"),
+        ("What is the ticket price for the Romanian Athenaeum?", "fallback", "UNSUPPORTED_PRICE_QUERY"),
+        ("What are the opening hours of Antipa Museum today?", "fallback", "UNSUPPORTED_LIVE_QUERY"),
         ("Who is the president of France?", "fallback", None),
         ("Set a reminder for tomorrow and tell me where University Square is.", "handoff", "MIXED_COMMAND_QUERY"),
     ],
@@ -95,6 +97,11 @@ def test_golden_directions_answers(question: str, required_fragments: list[str])
     [
         (
             "What is the Romanian Athenaeum?",
+            "romanian_athenaeum",
+            ["concert hall", "1888", "George Enescu", "central Bucharest"],
+        ),
+        (
+            "What can you tell me about the romanian atheneum?",
             "romanian_athenaeum",
             ["concert hall", "1888", "George Enescu", "central Bucharest"],
         ),

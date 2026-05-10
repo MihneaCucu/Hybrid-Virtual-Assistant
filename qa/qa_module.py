@@ -82,6 +82,12 @@ DEFAULT_DOMAIN_CONFIG = {
         "days_query_markers": ["how many days", "days to stay", "how long to stay", "trip length", "itinerary"],
         "symbolic_query_markers": ["symbolize", "symbolise", "commemorate", "historical event"],
         "exact_location_query_markers": ["exact address", "street", "number", "where exactly", "exact location"],
+        "entity_location_query_markers": ["where is", "where are", "where exactly", "address", "located", "location", "street"],
+        "entity_highlights_query_markers": ["what can i see", "what to see", "what is there to see", "features", "highlights", "architecture", "style", "inside", "visit there", "see at"],
+        "entity_why_visit_query_markers": ["why visit", "why should i visit", "worth visiting", "should i visit", "reason to visit"],
+        "entity_history_query_markers": ["history", "historical", "when was", "when did", "built", "opened", "founded", "created"],
+        "entity_overview_query_markers": ["what is", "what are", "tell me about", "about", "details", "information", "explain", "describe"],
+        "unsupported_live_query_markers": ["opening hours", "open today", "hours today", "current", "right now", "today", "live"],
         "symbolic_answer_markers": ["world war", "victory", "coronation", "king", "historical"],
         "location_answer_markers": ["strada", "street", "soseaua", "boulevard", "sector", "piata", "nr"],
         "price_answer_markers": ["lei", "ron", "euro", "eur", "$", "usd", "€"],
@@ -1397,81 +1403,51 @@ def _profile_answer(profile: dict, parts: list[str]) -> dict:
 
 
 def _is_entity_location_query(text: str) -> bool:
-    lowered = text.lower().strip()
-    markers = (
-        "where is",
-        "where are",
-        "where exactly",
-        "address",
-        "located",
-        "location",
-        "street",
-    )
-    return any(marker in lowered for marker in markers)
+    normalized = _normalize_for_match(text)
+    return _contains_any(normalized, _cfg_list("qa", "entity_location_query_markers"))
 
 
 def _is_entity_highlights_query(text: str) -> bool:
-    lowered = text.lower().strip()
-    markers = (
-        "what can i see",
-        "what to see",
-        "what is there to see",
-        "features",
-        "highlights",
-        "architecture",
-        "style",
-        "inside",
-        "visit there",
-        "see at",
-    )
-    return any(marker in lowered for marker in markers)
+    normalized = _normalize_for_match(text)
+    return _contains_any(normalized, _cfg_list("qa", "entity_highlights_query_markers"))
 
 
 def _is_entity_why_visit_query(text: str) -> bool:
-    lowered = text.lower().strip()
-    markers = (
-        "why visit",
-        "why should i visit",
-        "worth visiting",
-        "should i visit",
-        "reason to visit",
-    )
-    return any(marker in lowered for marker in markers)
+    normalized = _normalize_for_match(text)
+    return _contains_any(normalized, _cfg_list("qa", "entity_why_visit_query_markers"))
 
 
 def _is_entity_history_query(text: str) -> bool:
-    lowered = text.lower().strip()
-    markers = (
-        "history",
-        "historical",
-        "when was",
-        "when did",
-        "built",
-        "opened",
-        "founded",
-        "created",
-    )
-    return any(marker in lowered for marker in markers)
+    normalized = _normalize_for_match(text)
+    return _contains_any(normalized, _cfg_list("qa", "entity_history_query_markers"))
 
 
 def _is_entity_overview_query(text: str) -> bool:
-    lowered = text.lower().strip()
-    prefixes = (
-        "what is ",
-        "what are ",
-        "tell me about ",
-        "give me details about ",
-        "give me information about ",
-        "explain ",
-        "describe ",
-    )
-    return lowered.startswith(prefixes)
+    normalized = _normalize_for_match(text)
+    return _contains_any(normalized, _cfg_list("qa", "entity_overview_query_markers"))
+
+
+def _is_unsupported_live_query(text: str) -> bool:
+    normalized = _normalize_for_match(text)
+    return _contains_any(normalized, _cfg_list("qa", "unsupported_live_query_markers"))
 
 
 def _answer_entity_profile_query(query: str) -> dict | None:
     profile = _matching_entity_profile(query)
     if profile is None:
         return None
+
+    if _is_price_query(query):
+        return make_fallback_response(
+            reason_code="UNSUPPORTED_PRICE_QUERY",
+            answer=_build_price_fallback_answer_for_query(query),
+        )
+
+    if _is_unsupported_live_query(query):
+        return make_fallback_response(
+            reason_code="UNSUPPORTED_LIVE_QUERY",
+            answer="I can't confirm live or current details from the static Bucharest knowledge base.",
+        )
 
     if _is_entity_location_query(query):
         return _profile_answer(
