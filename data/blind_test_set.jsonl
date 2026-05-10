@@ -23,3 +23,11 @@
 {"id":"blind_023","question":"What items does the history museum contain?","expected_status":"answered","accepted_answers":["historical artifacts","Crown Jewels","Trajan"],"gold_doc":"national_museum_of_romanian_history","category":"paraphrase"}
 {"id":"blind_024","question":"What is the closest station to Arcul de Triumf?","expected_status":"answered","accepted_answers":["Aviatorilor"],"gold_doc":"structured_place_metro_osm_place_arcul_de_triumf","category":"structured_metro"}
 {"id":"blind_025","question":"Where is Stavropoleos located exactly?","expected_status":"answered","accepted_answers":["Post Street 6","Post Street","Bucharest"],"gold_doc":"structured_osm_place_stavropoleos_monastery","category":"structured_address"}
+{"id":"blind_026","question":"Is Arcul de Triumf close to a metro station?","expected_status":"answered","accepted_answers":["Aviatorilor","Nearby transport","Arcul de Triumf"],"gold_doc":"structured_place_metro_osm_place_arcul_de_triumf","category":"nearby_transport_paraphrase"}
+{"id":"blind_027","question":"Tell me about the Palace of the Parliament and set a reminder.","expected_status":"handoff","category":"mixed_command_info"}
+{"id":"blind_028","question":"Can you reserve a hotel in Bucharest?","expected_status":"handoff","category":"booking_command"}
+{"id":"blind_029","question":"What are the opening hours of Antipa Museum today?","expected_status":"fallback","category":"live_opening_hours"}
+{"id":"blind_030","question":"What is the exact address of the Palace of the Parliament?","expected_status":"answered","accepted_answers":["Strada Izvor","2-4","Bucharest"],"gold_doc":"structured_osm_place_palace_of_the_parliament","category":"structured_address"}
+{"id":"blind_031","question":"How should I plan a Bucharest trip?","expected_status":"answered","accepted_answers":["late spring","2-3","45-70","EUR"],"gold_doc":"curated_bucharest_travel_guidance","category":"travel_guidance_overview"}
+{"id":"blind_032","question":"What is the current exchange rate in Romania?","expected_status":"fallback","category":"live_financial_fact"}
+{"id":"blind_033","question":"Where is University Square in Bucharest?","expected_status":"answered","accepted_answers":["University Square","Bucharest"],"gold_doc":"structured_osm_place_university_square_bucharest","category":"structured_address"}
