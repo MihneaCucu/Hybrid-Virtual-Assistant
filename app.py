@@ -6,6 +6,8 @@ from pipeline import load_all, process, reset_dm
 # load all models at startup
 load_all()
 
+_whisper_model = None
+
 ROUTE_LABELS = {
     "dm":       "Dialogue Manager",
     "qa":       "Knowledge Base Q&A",
@@ -95,36 +97,38 @@ Ask factual questions about the city, or give commands like bookings and transpo
             gr.Markdown("### Last turn")
             meta_box = gr.Markdown("No message yet.")
 
-    # optional speech tab
-    with gr.Accordion("Speech input (optional)", open=False):
-        gr.Markdown(
-            "Record your voice - the transcript will be sent as a message."
+    # speech input
+    with gr.Row():
+        audio_in = gr.Audio(
+            sources=["microphone"],
+            type="filepath",
+            label="Press to record, press again to stop and send",
+            scale=5,
         )
-        audio_in = gr.Audio(sources=["microphone"], type="filepath", label="Speak")
-        transcribe_btn = gr.Button("Transcribe & Send")
-        transcribe_status = gr.Textbox(label="Transcription", interactive=False)
 
-        def transcribe_and_send(audio_path, history):
-            if audio_path is None:
-                return history, "No audio recorded.", "No message yet."
-            try:
-                import whisper
-                model = whisper.load_model("base")
-                result_w = model.transcribe(audio_path)
-                text = result_w["text"].strip()
-            except ImportError:
-                return history, "(openai-whisper not installed)", "No message yet."
-            except Exception as e:
-                return history, f"(Transcription error: {e})", "No message yet."
+    def transcribe_and_send(audio_path, history):
+        if audio_path is None:
+            return history, meta_box.value
+        global _whisper_model
+        try:
+            import whisper as _whisper
+            if _whisper_model is None:
+                _whisper_model = _whisper.load_model("base")
+            text = _whisper_model.transcribe(audio_path)["text"].strip()
+        except ImportError:
+            return history, "openai-whisper is not installed."
+        except Exception as e:
+            return history, f"Transcription error: {e}"
+        if not text:
+            return history, meta_box.value
+        new_history, meta = respond(text, history)
+        return new_history, meta
 
-            new_history, meta = respond(text, history)
-            return new_history, text, meta
-
-        transcribe_btn.click(
-            transcribe_and_send,
-            inputs=[audio_in, chatbot],
-            outputs=[chatbot, transcribe_status, meta_box],
-        )
+    audio_in.stop_recording(
+        transcribe_and_send,
+        inputs=[audio_in, chatbot],
+        outputs=[chatbot, meta_box],
+    )
 
     # example queries
     gr.Examples(

@@ -166,6 +166,11 @@ _looks_like_question_fn = None
 def _load_qa():
     global _qa_ready, _looks_like_question_fn
     try:
+        chunks_path = os.path.join(ROOT, "kb", "chunks.jsonl")
+        if not os.path.exists(chunks_path):
+            print("[pipeline] QA index missing, building now...")
+            import scripts.build_index as _bi
+            _bi.main()
         from qa.qa_module import load_qa_system
         from qa.routing import looks_like_question
         load_qa_system()
@@ -218,19 +223,19 @@ def process(user_text: str) -> dict[str, Any]:
 
     intent, slots = _run_nlu(text)
 
-    # routing
-    is_question = (
-        intent in QA_INTENTS
-        or (_looks_like_question_fn is not None and _looks_like_question_fn(text))
-    )
-
-    if intent in DM_INTENTS and not is_question:
+    # routing - NLU intent takes priority over heuristics
+    if intent in DM_INTENTS:
         response = _run_dm(text, intent, slots)
         return {
             "response": response,
             "intent": intent, "slots": slots,
             "route": "dm", "confidence": 1.0, "source_doc": None,
         }
+
+    is_question = (
+        intent in QA_INTENTS
+        or (_looks_like_question_fn is not None and _looks_like_question_fn(text))
+    )
 
     if is_question:
         qa_result = _run_qa(text)
