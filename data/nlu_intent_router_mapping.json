@@ -1,0 +1,103 @@
+{
+  "description": "MASSIVE/NLU intent labels mapped to final hybrid assistant routes. Knowledge/Q&A is called only for qa_definition and qa_factoid, and it still applies Bucharest KB grounding/fallback.",
+  "routes": {
+    "qa": {
+      "calls_qa": true,
+      "intents": [
+        "qa_definition",
+        "qa_factoid"
+      ]
+    },
+    "command": {
+      "calls_qa": false,
+      "intents": [
+        "alarm_query",
+        "alarm_remove",
+        "alarm_set",
+        "audio_volume_down",
+        "audio_volume_mute",
+        "audio_volume_other",
+        "audio_volume_up",
+        "calendar_query",
+        "calendar_remove",
+        "calendar_set",
+        "email_addcontact",
+        "email_query",
+        "email_querycontact",
+        "email_sendemail",
+        "iot_cleaning",
+        "iot_coffee",
+        "iot_hue_lightchange",
+        "iot_hue_lightdim",
+        "iot_hue_lightoff",
+        "iot_hue_lighton",
+        "iot_hue_lightup",
+        "iot_wemo_off",
+        "iot_wemo_on",
+        "lists_createoradd",
+        "lists_query",
+        "lists_remove",
+        "music_dislikeness",
+        "music_likeness",
+        "music_query",
+        "music_settings",
+        "play_audiobook",
+        "play_game",
+        "play_music",
+        "play_podcasts",
+        "play_radio",
+        "social_post",
+        "takeaway_order",
+        "takeaway_query",
+        "transport_taxi"
+      ]
+    },
+    "external_or_fallback": {
+      "calls_qa": false,
+      "intents": [
+        "cooking_query",
+        "cooking_recipe",
+        "datetime_convert",
+        "datetime_query",
+        "news_query",
+        "qa_currency",
+        "qa_maths",
+        "qa_stock",
+        "recommendation_events",
+        "recommendation_locations",
+        "recommendation_movies",
+        "social_query",
+        "transport_query",
+        "transport_ticket",
+        "transport_traffic",
+        "weather_query"
+      ]
+    },
+    "fallback": {
+      "calls_qa": false,
+      "intents": [
+        "general_greet",
+        "general_joke",
+        "general_quirky"
+      ]
+    },
+    "handoff": {
+      "calls_qa": false,
+      "intents": [
+        "mixed_command_question"
+      ]
+    }
+  },
+  "recommended_nlu_output": {
+    "intent": "qa_factoid",
+    "confidence": 0.91,
+    "slots": {}
+  },
+  "router_policy": {
+    "qa": "Call qa.qa_module.answer_question(text). If Q&A returns fallback, display fallback; do not override with a hallucinated answer.",
+    "command": "Call the command/action module or simulation.",
+    "external_or_fallback": "Call a live/external module if implemented; otherwise return safe fallback. Do not call Q&A for live data.",
+    "fallback": "Return project fallback; do not call Q&A.",
+    "handoff": "Dialogue manager should split or ask clarification."
+  }
+}
