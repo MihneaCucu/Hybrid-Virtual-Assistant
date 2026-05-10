@@ -23,6 +23,10 @@ results/*.json
 results/*.png
 results/*.csv
 
+# Local documentation/report drafts
+docs/
+report/
+
 # IDEs
 .idea/
 .vscode/
