@@ -13,7 +13,7 @@ BM25_THRESHOLD: float = 2.0
 # If top-1 and top-2 retrieval scores are almost identical, confidence is weak.
 BM25_MARGIN_THRESHOLD: float = 0.10
 
-READER_THRESHOLD: float = 0.25
+READER_THRESHOLD: float = 0.10
 
 
 def should_fallback_retrieval(top1_score: float, top2_score: float | None = None) -> bool:

@@ -52,6 +52,7 @@ _restaurant_rows: list[dict] = []
 _coffee_shop_rows: list[dict] = []
 _known_cuisine_markers: list[str] = []
 _travel_guidance: dict = {}
+_entity_profile_aliases: list[tuple[str, dict]] = []
 _domain_config: dict = {}
 _LEET_REPLACEMENTS = str.maketrans({"0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t"})
 _MIN_ALIAS_CHARS = 3
@@ -61,7 +62,7 @@ _MAX_LISTING_RESULTS = 5
 DEFAULT_DOMAIN_CONFIG = {
     "nlu": {
         "question_markers": ["what", "when", "where", "who", "why", "how", "which", "tell me", "explain", "is", "are", "can"],
-        "command_markers": ["set", "book", "schedule", "create", "add", "cancel", "remind", "alarm", "buy"],
+        "command_markers": ["set", "book", "reserve", "schedule", "create", "add", "cancel", "remind", "alarm", "buy"],
     },
     "qa": {
         "metro_station_markers": ["metro station", "subway station", "station", "metro line", "subway line", "metro"],
@@ -69,6 +70,7 @@ DEFAULT_DOMAIN_CONFIG = {
         "metro_target_markers": ["museum", "muzeu", "restaurant", "food", "coffee", "cafe", "park", "square", "monastery", "palace", "athenaeum", "landmark"],
         "transport_nearby_markers": ["near", "nearby", "around", "vicinity", "close to", "in vicinity"],
         "transport_stop_markers": ["transport", "station", "stations", "stop", "stops", "stb", "metro", "bus", "tram", "trolleybus"],
+        "directions_query_markers": ["get to", "go to", "reach", "arrive at", "travel to", "directions to", "how do i get", "how can i get", "how to get", "how to go", "what transport should i take"],
         "address_markers": ["address", "street", "number", "located at", "where exactly", "where is", "located"],
         "museum_markers": ["museum", "muzeu"],
         "price_query_markers": ["how much", "price", "cost", "fare", "ticket"],
@@ -232,6 +234,32 @@ def _load_travel_guidance(path: str) -> dict:
     if not isinstance(loaded, dict):
         return {}
     return loaded
+
+
+def _load_entity_profile_aliases(path: str) -> list[tuple[str, dict]]:
+    try:
+        with open(path, encoding="utf-8") as f:
+            loaded = json.load(f)
+    except FileNotFoundError:
+        return []
+    except json.JSONDecodeError:
+        return []
+    if not isinstance(loaded, list):
+        return []
+
+    aliases: list[tuple[str, dict]] = []
+    for profile in loaded:
+        if not isinstance(profile, dict):
+            continue
+        names = [profile.get("name", "")]
+        names.extend(profile.get("aliases", []) or [])
+        for name in names:
+            normalized = _normalize_for_match(str(name))
+            if normalized:
+                aliases.append((normalized, profile))
+
+    aliases.sort(key=lambda item: len(item[0]), reverse=True)
+    return aliases
 
 
 def _contains_any(lowered_text: str, markers: list[str]) -> bool:
@@ -806,6 +834,8 @@ def _query_topic(normalized_query: str) -> str | None:
         return "budget"
     if "how many days" in normalized_query or "how long" in normalized_query:
         return "days"
+    if "plan" in normalized_query or "itinerary" in normalized_query or "trip" in normalized_query:
+        return "overview"
     return None
 
 
@@ -831,6 +861,13 @@ def _answer_travel_guidance_query(query: str) -> dict | None:
         answer = str(_travel_guidance.get("budget", "")).strip()
     elif topic == "days":
         answer = str(_travel_guidance.get("recommended_days", "")).strip()
+    elif topic == "overview":
+        season = str(_travel_guidance.get("best_season", "")).strip()
+        days = str(_travel_guidance.get("recommended_days", "")).strip()
+        budget = str(_travel_guidance.get("budget", "")).strip()
+        parts = [part for part in (season, days, budget) if part]
+        if parts:
+            answer = " ".join(parts)
 
     if not answer:
         return None
@@ -849,6 +886,11 @@ def _is_nearby_transport_query(text: str) -> bool:
     has_nearby = _contains_any(lowered, _cfg_list("qa", "transport_nearby_markers"))
     has_transport = _contains_any(lowered, _cfg_list("qa", "transport_stop_markers"))
     return has_nearby and has_transport
+
+
+def _is_directions_query(text: str) -> bool:
+    lowered = _normalize_for_match(text)
+    return _contains_any(lowered, _cfg_list("qa", "directions_query_markers"))
 
 
 def _extract_place_coords(row: dict) -> tuple[float | None, float | None]:
@@ -878,23 +920,10 @@ def _find_place_rows_in_query(normalized_query: str) -> tuple[str, list[dict]] |
     return None
 
 
-def _answer_nearby_transport_query(query: str) -> dict | None:
-    if not _is_nearby_transport_query(query):
-        return None
+def _build_transport_summary_for_place(place_row: dict) -> dict:
     if not _transit_stops:
         return make_fallback_response(reason_code="NO_TRANSIT_DATA")
 
-    normalized_query = _normalize_for_match(query)
-    place_match = _find_place_rows_in_query(normalized_query)
-    if place_match is None:
-        return None
-
-    _, rows = place_match
-    distinct_rows = _distinct_place_rows(rows)
-    if len(distinct_rows) > 1:
-        return _build_ambiguous_place_fallback(distinct_rows)
-
-    place_row = distinct_rows[0]
     place_name = _row_place_name(place_row)
     lat, lon = _extract_place_coords(place_row)
     if lat is None or lon is None:
@@ -971,6 +1000,53 @@ def _answer_nearby_transport_query(query: str) -> dict | None:
         confidence=0.98,
         sources=sources,
     )
+
+
+def _answer_nearby_transport_query(query: str) -> dict | None:
+    if not _is_nearby_transport_query(query):
+        return None
+
+    normalized_query = _normalize_for_match(query)
+    place_match = _find_place_rows_in_query(normalized_query)
+    if place_match is None:
+        return None
+
+    _, rows = place_match
+    distinct_rows = _distinct_place_rows(rows)
+    if len(distinct_rows) > 1:
+        return _build_ambiguous_place_fallback(distinct_rows)
+
+    return _build_transport_summary_for_place(distinct_rows[0])
+
+
+def _answer_directions_query(query: str) -> dict | None:
+    if not _is_directions_query(query):
+        return None
+
+    normalized_query = _normalize_for_match(query)
+    place_match = _find_place_rows_in_query(normalized_query)
+    if place_match is None:
+        return None
+
+    _, rows = place_match
+    distinct_rows = _distinct_place_rows(rows)
+    if len(distinct_rows) > 1:
+        return _build_ambiguous_place_fallback(distinct_rows)
+
+    transport_answer = _build_transport_summary_for_place(distinct_rows[0])
+    if transport_answer.get("status") != "answered":
+        return transport_answer
+
+    place_name = _row_place_name(distinct_rows[0])
+    base_answer = str(transport_answer.get("answer") or "")
+    prefix = f"To get to {place_name}, use this local transport summary: nearest metro and nearby stops from the KB are:"
+    answer = (
+        f"{prefix} {base_answer} "
+        "This is based on the local Bucharest knowledge base and is not live turn-by-turn navigation."
+    )
+    transport_answer["answer"] = answer
+    transport_answer["reason_code"] = "RULE_BASED_DIRECTIONS_TRANSPORT_MATCH"
+    return transport_answer
 
 
 def _answer_museum_metro_query(query: str) -> dict | None:
@@ -1294,6 +1370,158 @@ def _answer_river_location_query(query: str) -> dict | None:
     return None
 
 
+def _matching_entity_profile(query: str) -> dict | None:
+    if not _entity_profile_aliases:
+        return None
+    normalized_query = _normalize_for_match(query)
+    for alias, profile in _entity_profile_aliases:
+        if _alias_in_query(alias, normalized_query):
+            return profile
+    return None
+
+
+def _profile_source(profile: dict) -> str:
+    return str(profile.get("source_doc") or profile.get("id") or "bucharest_entity_profile")
+
+
+def _profile_answer(profile: dict, parts: list[str]) -> dict:
+    answer = " ".join(part.strip() for part in parts if str(part or "").strip())
+    if not answer:
+        answer = str(profile.get("short_description") or "").strip()
+    return _make_rule_answer_response(
+        answer=answer,
+        source_doc=_profile_source(profile),
+        reason_code="RULE_BASED_ENTITY_PROFILE_MATCH",
+        confidence=0.97,
+    )
+
+
+def _is_entity_location_query(text: str) -> bool:
+    lowered = text.lower().strip()
+    markers = (
+        "where is",
+        "where are",
+        "where exactly",
+        "address",
+        "located",
+        "location",
+        "street",
+    )
+    return any(marker in lowered for marker in markers)
+
+
+def _is_entity_highlights_query(text: str) -> bool:
+    lowered = text.lower().strip()
+    markers = (
+        "what can i see",
+        "what to see",
+        "what is there to see",
+        "features",
+        "highlights",
+        "architecture",
+        "style",
+        "inside",
+        "visit there",
+        "see at",
+    )
+    return any(marker in lowered for marker in markers)
+
+
+def _is_entity_why_visit_query(text: str) -> bool:
+    lowered = text.lower().strip()
+    markers = (
+        "why visit",
+        "why should i visit",
+        "worth visiting",
+        "should i visit",
+        "reason to visit",
+    )
+    return any(marker in lowered for marker in markers)
+
+
+def _is_entity_history_query(text: str) -> bool:
+    lowered = text.lower().strip()
+    markers = (
+        "history",
+        "historical",
+        "when was",
+        "when did",
+        "built",
+        "opened",
+        "founded",
+        "created",
+    )
+    return any(marker in lowered for marker in markers)
+
+
+def _is_entity_overview_query(text: str) -> bool:
+    lowered = text.lower().strip()
+    prefixes = (
+        "what is ",
+        "what are ",
+        "tell me about ",
+        "give me details about ",
+        "give me information about ",
+        "explain ",
+        "describe ",
+    )
+    return lowered.startswith(prefixes)
+
+
+def _answer_entity_profile_query(query: str) -> dict | None:
+    profile = _matching_entity_profile(query)
+    if profile is None:
+        return None
+
+    if _is_entity_location_query(query):
+        return _profile_answer(
+            profile,
+            [
+                str(profile.get("location", "")),
+                str(profile.get("nearby_transport", "")),
+            ],
+        )
+
+    if _is_entity_highlights_query(query):
+        return _profile_answer(
+            profile,
+            [
+                str(profile.get("architecture_or_features", "")),
+                str(profile.get("why_visit", "")),
+            ],
+        )
+
+    if _is_entity_why_visit_query(query):
+        return _profile_answer(
+            profile,
+            [
+                str(profile.get("why_visit", "")),
+                str(profile.get("short_description", "")),
+            ],
+        )
+
+    if _is_entity_history_query(query):
+        return _profile_answer(
+            profile,
+            [
+                str(profile.get("history", "")),
+                str(profile.get("short_description", "")),
+            ],
+        )
+
+    if _is_entity_overview_query(query):
+        return _profile_answer(
+            profile,
+            [
+                str(profile.get("short_description", "")),
+                str(profile.get("location", "")),
+                str(profile.get("why_visit", "")),
+            ],
+        )
+
+    return None
+
+
 def load_qa_system(
     kb_path: str = "kb/chunks.jsonl",
     index_path: str = "kb/bm25_index.pkl",
@@ -1304,6 +1532,7 @@ def load_qa_system(
     coffee_shops_path: str = "kb/structured/coffee_shops.jsonl",
     transit_path: str = "kb/structured/transit.jsonl",
     travel_guidance_path: str = "data/bucharest_travel_guidance.json",
+    entity_profiles_path: str = "data/bucharest_entity_profiles.json",
     domain_config_path: str = "data/domain_config_bucharest.json",
 ) -> None:
     """
@@ -1314,7 +1543,7 @@ def load_qa_system(
         kb_path:    Path to the chunked knowledge base (JSONL).
         index_path: Path to the serialized BM25 index (pickle).
     """
-    global _system_loaded, _chunks, _bm25, _museum_metro_aliases, _museum_address_aliases, _place_address_aliases, _transit_agencies, _transit_stops, _restaurant_rows, _coffee_shop_rows, _known_cuisine_markers, _travel_guidance, _domain_config
+    global _system_loaded, _chunks, _bm25, _museum_metro_aliases, _museum_address_aliases, _place_address_aliases, _transit_agencies, _transit_stops, _restaurant_rows, _coffee_shop_rows, _known_cuisine_markers, _travel_guidance, _entity_profile_aliases, _domain_config
     if _system_loaded:
         return
 
@@ -1332,6 +1561,7 @@ def load_qa_system(
     _transit_agencies = _load_transit_agencies(transit_path)
     _transit_stops = _load_transit_stops(transit_path)
     _travel_guidance = _load_travel_guidance(travel_guidance_path)
+    _entity_profile_aliases = _load_entity_profile_aliases(entity_profiles_path)
     load_reader()
     _system_loaded = True
 
@@ -1367,6 +1597,10 @@ def answer_question(query: str) -> dict:
     if travel_guidance_answer is not None:
         return travel_guidance_answer
 
+    directions_answer = _answer_directions_query(query)
+    if directions_answer is not None:
+        return directions_answer
+
     nearby_transport_answer = _answer_nearby_transport_query(query)
     if nearby_transport_answer is not None:
         return nearby_transport_answer
@@ -1386,6 +1620,10 @@ def answer_question(query: str) -> dict:
     place_address_answer = _answer_place_address_query(query)
     if place_address_answer is not None:
         return place_address_answer
+
+    entity_profile_answer = _answer_entity_profile_query(query)
+    if entity_profile_answer is not None:
+        return entity_profile_answer
 
     museum_content_answer = _answer_museum_content_query(query)
     if museum_content_answer is not None:

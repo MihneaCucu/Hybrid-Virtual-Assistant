@@ -133,12 +133,11 @@ Ask factual questions about the city, or give commands like bookings and transpo
     # example queries
     gr.Examples(
         examples=[
-            "Hello!",
-            "Where is the Romanian Athenaeum?",
-            "I want a cheap Italian restaurant in the centre",
+            "What is the Romanian Athenaeum?",
+            "Where are Cismigiu Gardens?",
+            "Tell me about the Palace of the Parliament",
+            "How many days should I spend in Bucharest?",
             "Book a table for 2 at 7pm on Friday",
-            "How do I get to the Palace of the Parliament?",
-            "What metro line goes to University Square?",
             "Book me a taxi from the airport to the city centre",
         ],
         inputs=msg_box,

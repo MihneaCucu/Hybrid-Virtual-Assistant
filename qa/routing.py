@@ -4,7 +4,7 @@ import re
 
 
 DEFAULT_QUESTION_MARKERS = ("what", "when", "where", "who", "why", "how", "which", "tell me", "is", "are", "can")
-DEFAULT_COMMAND_MARKERS = ("set", "book", "schedule", "create", "add", "cancel", "remind")
+DEFAULT_COMMAND_MARKERS = ("set", "book", "reserve", "schedule", "create", "add", "cancel", "remind", "alarm", "buy")
 DEFAULT_UNSUPPORTED_CHAT_MARKERS = ("joke", "story", "poem", "chat", "talk to me")
 
 
