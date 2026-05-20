@@ -19,3 +19,6 @@ the city, or give commands like bookings and transport.
 - **NLU** (Stefan) - BiLSTM intent classifier and slot tagger
 - **QA** (Mihnea) - BM25 retrieval + MiniLM reader over a Bucharest knowledge base
 - **Dialogue Manager** (George) - seq2seq response generator for task-oriented turns
+
+## Demo 
+https://huggingface.co/spaces/roisan13/hybrid-virtual-assistant
