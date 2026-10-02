@@ -1,0 +1,51 @@
+Hybrid Virtual Assistant — local demo recording
+Recorded: 2026-10-02
+Source branch: mihnea (Q&A development branch; not the integrated Gradio UI)
+Command: python scripts/hybrid_demo_cli.py --story --show-meta
+Setup: expanded local KB; cached extractive reader
+
+Running hybrid assistant demo with 6 queries from data/hybrid_demo_story.jsonl
+
+[01] hybrid_01
+You: Set a reminder for 9 AM tomorrow.
+Assistant: Command branch: simulated reminder creation.
+[meta] route=command status=simulated reason=set_reminder source=- confidence=1.0
+Expected route: command | Got: command | Match: yes
+Story point: Command branch is detected and simulated
+
+[02] hybrid_02
+You: What collections does the National Museum of Art of Romania feature?
+Assistant: medieval and modern Romanian art
+[meta] route=qa status=answered reason=- source=national_museum_of_art_of_romania confidence=0.7
+Expected route: qa | Got: qa | Match: yes
+Story point: Knowledge/Q&A answers a narrative museum question
+
+[03] hybrid_03
+You: Show metro as well as STB stations near Romanian Athenaeum
+Assistant: Nearby transport for Romanian Athenaeum: Metro: Piața Romană (413 m, metro, lines M2). STB: Bd. Nicolae Balcescu (160 m, STB, lines 122, 137, 311, N121).
+[meta] route=qa status=answered reason=RULE_BASED_NEARBY_TRANSPORT_MATCH source=structured_place_metro_osm_place_romanian_athenaeum confidence=0.98
+Expected route: qa | Got: qa | Match: yes
+Story point: Knowledge/Q&A answers a structured local transport question
+
+[04] hybrid_04
+You: How much is a metro ticket in Bucharest?
+Assistant: I can't confirm current ticket prices from the knowledge base. Please check official sources: STB SA: http://stbsa.ro | METROREX SA: http://www.metrorex.ro.
+[meta] route=fallback status=fallback reason=UNSUPPORTED_PRICE_QUERY source=- confidence=0.0
+Expected route: fallback | Got: fallback | Match: yes
+Story point: Unsupported live price information falls back safely
+
+[05] hybrid_05
+You: Set a reminder for tomorrow and tell me where University Square is.
+Assistant: This mixes a command with a factual question, so the dialogue manager should split or reroute it.
+[meta] route=handoff status=handoff reason=MIXED_COMMAND_QUERY source=- confidence=0.0
+Expected route: handoff | Got: handoff | Match: yes
+Story point: Mixed command plus Q&A is handed off
+
+[06] hybrid_06
+You: Tell me a joke about computers.
+Assistant: This assistant demo is focused on commands and Bucharest tourist-guide Q&A, not chit-chat.
+[meta] route=fallback status=fallback reason=UNSUPPORTED_CHITCHAT source=- confidence=0.0
+Expected route: fallback | Got: fallback | Match: yes
+Story point: Out-of-domain chit-chat is rejected
+
+Route match: 6/6 = 1.000

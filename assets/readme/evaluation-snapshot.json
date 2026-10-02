@@ -1,0 +1,83 @@
+{
+  "description": "Recorded local project-domain Q&A results copied from existing repository evaluation artifacts for README review.",
+  "scope": "Expanded local demo KB; 490 chunks across 376 document IDs. Structured records are excluded from Git.",
+  "readme_snapshot_created": "2026-10-02",
+  "fresh_evaluation_run": false,
+  "source_artifacts": [
+    "results/qa_eval_summary.json",
+    "results/qa_blind_eval_summary.json",
+    "results/qa_baseline_comparison.json"
+  ],
+  "development": {
+    "positive": {
+      "count": 50,
+      "fallback_rate": 0.0,
+      "em": 0.48,
+      "answer_contains_gold_rate": 1.0,
+      "token_f1": 0.679,
+      "source_doc_accuracy": 1.0,
+      "retrieval_recall_at_1": 0.54,
+      "retrieval_recall_at_3": 0.8,
+      "retrieval_mrr": 0.65,
+      "avg_confidence": 0.81
+    },
+    "negative": {
+      "count": 14,
+      "status_accuracy": 1.0,
+      "correct_fallback_rate": 1.0
+    },
+    "error_tags": {
+      "positive": {
+        "ok": 50
+      },
+      "negative": {
+        "ok": 14
+      },
+      "all": {
+        "ok": 64
+      }
+    },
+    "paths": {
+      "positive": "data/test_set.json",
+      "negative": "data/negative_test_set.jsonl",
+      "details": "results/qa_eval_details.jsonl"
+    }
+  },
+  "blind_stress": {
+    "count": 33,
+    "answered_expected": 20,
+    "status_accuracy": 0.939,
+    "answer_contains_gold_rate": 0.85,
+    "source_doc_accuracy": 0.85,
+    "error_tags": {
+      "missed_answer": 2,
+      "ok": 30,
+      "retrieval_miss": 1
+    }
+  },
+  "baseline_comparison": {
+    "count": 50,
+    "dataset": "data/test_set.json",
+    "retrieval_only": {
+      "count": 50,
+      "source_doc_accuracy": 0.54,
+      "answer_contains_gold_rate": 0.6,
+      "token_f1": 0.052,
+      "fallback_rate": 0.0,
+      "retrieval_recall_at_1": 0.54,
+      "retrieval_recall_at_3": 0.8
+    },
+    "full_qa": {
+      "count": 50,
+      "source_doc_accuracy": 1.0,
+      "answer_contains_gold_rate": 1.0,
+      "token_f1": 0.679,
+      "fallback_rate": 0.0,
+      "retrieval_recall_at_1": 0.54,
+      "retrieval_recall_at_3": 0.8
+    },
+    "interpretation": "Retrieval-only returns the top BM25 chunk directly. Full Q&A uses the same retrieval layer plus structured rules, extractive answer selection, confidence scoring, and safe fallback."
+  },
+  "source_branch": "mihnea (Q&A development branch)",
+  "integration_note": "Results describe the expanded Q&A development setup, not an end-to-end benchmark of app.py."
+}
