@@ -1,0 +1,225 @@
+{
+  "nlu": {
+    "question_markers": [
+      "what",
+      "when",
+      "where",
+      "who",
+      "why",
+      "how",
+      "which",
+      "tell me",
+      "explain",
+      "is",
+      "are",
+      "can"
+    ],
+    "command_markers": [
+      "set",
+      "book",
+      "reserve",
+      "schedule",
+      "create",
+      "add",
+      "cancel",
+      "remind",
+      "alarm",
+      "buy"
+    ]
+  },
+  "qa": {
+    "metro_station_markers": [
+      "metro station",
+      "subway station",
+      "station",
+      "metro line",
+      "subway line",
+      "metro"
+    ],
+    "metro_relation_markers": [
+      "at",
+      "near",
+      "nearest",
+      "closest",
+      "for",
+      "to"
+    ],
+    "metro_target_markers": [
+      "museum",
+      "muzeu",
+      "restaurant",
+      "food",
+      "coffee",
+      "cafe",
+      "park",
+      "square",
+      "monastery",
+      "palace",
+      "athenaeum",
+      "landmark"
+    ],
+    "transport_nearby_markers": [
+      "near",
+      "nearby",
+      "around",
+      "vicinity",
+      "close to",
+      "in vicinity"
+    ],
+    "transport_stop_markers": [
+      "transport",
+      "station",
+      "stations",
+      "stop",
+      "stops",
+      "stb",
+      "metro",
+      "bus",
+      "tram",
+      "trolleybus"
+    ],
+    "directions_query_markers": [
+      "get to",
+      "go to",
+      "reach",
+      "arrive at",
+      "travel to",
+      "directions to",
+      "how do i get",
+      "how can i get",
+      "how to get",
+      "how to go",
+      "what transport should i take"
+    ],
+    "address_markers": [
+      "address",
+      "street",
+      "number",
+      "located at",
+      "where exactly",
+      "where is",
+      "located"
+    ],
+    "museum_markers": [
+      "museum",
+      "muzeu"
+    ],
+    "price_query_markers": [
+      "how much",
+      "price",
+      "cost",
+      "fare",
+      "ticket"
+    ],
+    "transit_markers": [
+      "metro",
+      "subway",
+      "bus",
+      "tram",
+      "transport",
+      "ticket",
+      "fare",
+      "stb",
+      "metrorex"
+    ],
+    "parking_markers": [
+      "parking",
+      "parcare",
+      "park fee",
+      "parking fee"
+    ],
+    "travel_markers": [
+      "visit",
+      "travel",
+      "trip",
+      "vacation",
+      "holiday",
+      "stay",
+      "days",
+      "itinerary",
+      "budget",
+      "season",
+      "plan"
+    ],
+    "season_query_markers": [
+      "best season",
+      "best time",
+      "comfortable time",
+      "when to visit",
+      "season to visit",
+      "when should i visit"
+    ],
+    "budget_query_markers": [
+      "budget",
+      "how much",
+      "cost",
+      "daily budget",
+      "money range",
+      "per day",
+      "expenses"
+    ],
+    "days_query_markers": [
+      "how many days",
+      "days to stay",
+      "how long to stay",
+      "trip length",
+      "itinerary"
+    ],
+    "symbolic_query_markers": [
+      "symbolize",
+      "symbolise",
+      "commemorate",
+      "historical event"
+    ],
+    "exact_location_query_markers": [
+      "exact address",
+      "street",
+      "number",
+      "where exactly",
+      "exact location"
+    ],
+    "symbolic_answer_markers": [
+      "world war",
+      "victory",
+      "coronation",
+      "king",
+      "historical"
+    ],
+    "location_answer_markers": [
+      "strada",
+      "street",
+      "soseaua",
+      "boulevard",
+      "sector",
+      "piata",
+      "nr"
+    ],
+    "price_answer_markers": [
+      "lei",
+      "ron",
+      "euro",
+      "eur",
+      "$",
+      "usd",
+      "€"
+    ],
+    "nearby_transport_radius_m": 800,
+    "nearby_transport_max_stops": 6,
+    "nearby_transport_max_metro_stops": 2,
+    "nearby_transport_max_surface_stops": 4,
+    "nearby_transport_max_lines_per_stop": 5
+  },
+  "links": {
+    "pmb_url": "https://www.pmb.ro",
+    "transit_official_links": [
+      {
+        "name": "STB SA",
+        "url": "http://stbsa.ro"
+      },
+      {
+        "name": "METROREX SA",
+        "url": "http://www.metrorex.ro"
+      }
+    ]
+  }
+}

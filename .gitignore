@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Model weights (large binary files, committed separately per branch)
+*.pt
+*.bin
+*.onnx
+
+# Generated QA index files
+kb/chunks.jsonl
+kb/bm25_index.pkl
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db

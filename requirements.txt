@@ -1,0 +1,16 @@
+# UI
+gradio==6.14.0
+
+# NLU - Stefan
+torch>=2.0
+transformers>=4.44.0
+pytorch-crf>=0.7.2
+
+# QA - Mihnea
+wikipedia==1.4.0
+rank_bm25==0.2.2
+nltk==3.8.1
+tqdm>=4.66.0
+
+# Speech
+openai-whisper
